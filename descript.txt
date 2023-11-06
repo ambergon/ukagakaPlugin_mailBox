@@ -1,0 +1,16 @@
+Charset,UTF-8
+readme.charset,UTF-8
+readme.readme.md
+type,plugin
+name,MailBox
+craftman,ambergon
+filename,main.dll
+
+id,f58ef886-8310-480a-aed2-801dd44bfc8e
+
+//メールチェック
+secondchangeinterval,180
+otherghosttalk,before
+
+//更新url
+//homeurl,
