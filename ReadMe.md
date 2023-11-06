@@ -81,8 +81,39 @@ secondchangeinterval,180
 //2 : 届いているが未読
 //3 : 届いていて  既読
 OnMailStatus {
-    reference[0]
-    reference[1]
+    //このようにしておけば試しやすいでしょう。
+    _text = "mailID : " + reference[0] + "\n" + "status : " + reference[1]
+    _text
+}
+```
+この関数を使用する際にしたい事は大体決まっているので以下のようにできます。
+
+- まだ届いていない
+    メールIDを使用して削除
+
+- 届いているが未読
+    専用トークに派生
+
+- 届いているし既読
+    専用トークに派生
+
+```
+OnMailStatus {
+    //_text = "mailID : " + reference[0] + "\n" + "status : " + reference[1]
+    //_text
+    _mailID = reference[0]
+
+    if reference[1] == "1" {
+        //Delele処理
+        "削除した。\![raiseplugin,MailBox,OnDeleteMail,%(_mailID)]"
+    } elseif reference[1] == "2" {
+        "何で返事してくれないの?"
+    } elseif reference[1] == "3" {
+        "読んでくれたんだ。"
+    } else {
+        //"メールを送り忘れた"
+        //もしくは既に削除した。
+    }
 }
 ```
 
@@ -90,8 +121,12 @@ OnMailStatus {
 ## Other
 このプラグインは無保証で配布されます。
 リンク、同梱などは問題ありません。
-好きに使ってください。
+好きに使ってください。今の時代にポケベル・携帯・スマホ・その他持ってないってマジ?みたいな導入すればいいんじゃないですかね(ぶんなげ
 12/25日に正式公開予定です。
+なので事前配布ユーザはそれまで待ってね。
+
+
+
 
 
 ## Author
