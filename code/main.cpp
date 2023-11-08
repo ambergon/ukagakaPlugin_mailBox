@@ -173,15 +173,6 @@ void SendMail( char* GhostMenuName , char* MailID , char* YYYY , char* MM , char
     streamDD << setw( 2 ) << setfill( '0' ) << strDD    ;
 
     string strYYYYmmdd = strYYYY + streamMM.str() + streamDD.str();
-
-    string strSender        = Sender       ;
-    strSender               = regex_replace( strSender , regex( "'" ) ,"\"" );
-    string strTitle         = Title        ;
-    strTitle                = regex_replace( strTitle , regex( "'" ) ,"\"" );
-    string strMailText      = MailText     ;
-    strMailText             = regex_replace( strMailText , regex( "'" ) ,"\"" );
-
-
     ////サニタイズチェック
     //数値のチェック
     string strCheck;
@@ -189,6 +180,18 @@ void SendMail( char* GhostMenuName , char* MailID , char* YYYY , char* MM , char
     if( strCheck != "" ){ return; }
     strCheck = regex_replace( strMailID , regex( R"([0-9])" ) ,"" );
     if( strCheck != "" ){ return; }
+
+    string strSender        = Sender       ;
+    strSender               = regex_replace( strSender , regex( "'" ) ,"\"" );
+    strSender               = regex_replace( strSender , regex( "vanish" ) ,"危険な文字" );
+    string strTitle         = Title        ;
+    strTitle                = regex_replace( strTitle , regex( "'" ) ,"\"" );
+    strTitle                = regex_replace( strTitle , regex( "vanish" ) ,"危険な文字" );
+    string strMailText      = MailText     ;
+    strMailText             = regex_replace( strMailText , regex( "'" ) ,"\"" );
+    strMailText             = regex_replace( strMailText , regex( "vanish" ) ,"危険な文字" );
+
+
 
 
     sqlite3_open16( dbPATH , &db );
