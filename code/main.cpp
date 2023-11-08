@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-//#define Debug
+#define Debug
 
 
 
@@ -106,11 +106,13 @@ extern "C" __declspec(dllexport) bool __cdecl unload(void){
 //| GhostMenuName | MailID | YYYYmmdd | Sender | Title | MailText | Checked |
 //|               |        |          |        |       |          |         |
 int callbackMailList(void *anything, int keyCount, char **value, char **key){
-    s << "├┼\\_a[OnOpenMail," << value[0] << "," << value[1] << "]" << value[3] << " : " << value[4] << "\\_a\\n";
+    
+    //printf( "%d\n" , *(int*)anything );
+    s << "├┼\\_a[OnOpenMail," << value[0] << "," << value[1] << "," << *(int*)anything << "]" << value[3] << " : " << value[4] << "\\_a\\n";
     return 0;
 }
 int callbackOpenMail(void *anything, int keyCount, char **value, char **key){
-    s << "   【" << value[4] << "】" << "\\n\\n" << value[5] << "\\n\\n\\n【" << value[0] << "】";
+    s << "   【" << value[4] << "】" << "\\n\\n" << value[5] << "\\n\\n\\n   【" << value[0] << "】";
     return 0;
 }
 int callbackNewMailCount(void *anything, int keyCount, char **value, char **key){
@@ -494,20 +496,9 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
         ////Userが触る機能
         //メールボックス
-        //┌┬────────────┬┐
-        //├┼────────────┼┤
-        //   未読メール   
-        //├┼────────────┼┤
-        //├┼────────────┼┤
-        //   既読メール   
-        //├┼────────────┼┤
-        //└┴────────────┴┘
         //┌ └ ┐ ┘ ├ ┤ ─ ┬ ┼ ┴
         //\\_a[OnCheckMail,0,0] ───未読メール─── \\_a
         //\\_a[OnCheckMail,1,0] ───既読メール─── \\_a┼
-
-
-
         } else if ( strcmp( ID , "OnMenuExec" ) == 0 ) {
             char res_buf[] = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\_q \\n┌┬────────────┬┐ \\n├┼────────────┼┤ \\n├┼\\_a[OnCheckMail,0,0] ───未読メール─── \\_a┼┤ \\n├┼────────────┼┤ \\n├┼────────────┼┤ \\n├┼\\_a[OnCheckMail,1,0] ───既読メール─── \\_a┼┤ \\n├┼────────────┼┤ \\n└┴────────────┴┘ \\_q \r\nScriptOption: nobreak,notranslate\r\n\r\n";
             //char res_buf[] = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\_q\\_a[OnCheckMail,0,0]未読メール\\_a\\n\\_a[OnCheckMail,1,0]既読メール\\_a\\_q\r\nScriptOption: nobreak,notranslate\r\n\r\n";
@@ -535,7 +526,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 char* err = NULL;
                 sqlite3_open16( dbPATH , &db );
                 string mailList = "select * from mailBox where YYYYmmdd <= " + strYMD + " and Checked = " + strChecked + " limit 20 offset " + strOffset ;
-                int sqliteRes = sqlite3_exec( db , mailList.c_str() , callbackMailList , NULL , &err );
+                int sqliteRes = sqlite3_exec( db , mailList.c_str() , callbackMailList , (void*)&offset , &err );
 #ifdef Debug
                 if ( sqliteRes != 0 ){
                     printf( "Select%s\n" , err );
@@ -576,10 +567,13 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
         //|               |        |          |        |       |          |         |
         //第1引数 : ゴースト名
         //第2引数 : メールID
+        //第3引数 : それらのオフセット
+        //既読リストに限りオフセットが欲しい。
         } else if ( strcmp( ID , "OnOpenMail" ) == 0 ) {
-            if ( Reference0 != NULL && Reference1 != NULL ){
+            if ( Reference0 != NULL && Reference1 != NULL && Reference2 != NULL ){
                 string strGhostMenuName = Reference0;
                 string strMailID        = Reference1;
+                string strOffSet        = Reference2;
 
 
                 char* err = NULL;
@@ -603,8 +597,8 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 //printf( "Select%s\n" , err );
                 sqlite3_close( db );
 
-                string start        = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\0\\b[2]";
-                string end          = "\r\nScriptOption: nobreak,notranslate\r\n\r\n";
+                string start        = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\0\\b[2]\\_q";
+                string end          = "\\n\\_a[OnCheckMail,0,0]未読メール\\_a - \\_a[OnCheckMail,1," + strOffSet + "]既読メール\\_a\\_q \r\nScriptOption: nobreak,notranslate\r\n\r\n";
                 string selectRes    = s.str();
                 string total        = start + selectRes + end;
                 int i               = strlen( total.c_str() );
@@ -618,13 +612,10 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 s.clear( stringstream::goodbit );
             }
 
-
-
         } else if ( strcmp( ID , "OnOtherGhostTalk" ) == 0 ) {
         //} else if ( strcmp( ID , "" ) == 0 ) {
         }
     }
-
 
     //返すものがなかった時
     if ( resBuf == NULL ){
