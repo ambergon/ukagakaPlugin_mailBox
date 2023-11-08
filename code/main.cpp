@@ -105,9 +105,8 @@ extern "C" __declspec(dllexport) bool __cdecl unload(void){
 //|               |        |          |        |       |          |         |
 //| GhostMenuName | MailID | YYYYmmdd | Sender | Title | MailText | Checked |
 //|               |        |          |        |       |          |         |
+//anything = offset
 int callbackMailList(void *anything, int keyCount, char **value, char **key){
-    
-    //printf( "%d\n" , *(int*)anything );
     s << "├┼\\_a[OnOpenMail," << value[0] << "," << value[1] << "," << *(int*)anything << "]" << value[3] << " : " << value[4] << "\\_a\\n";
     return 0;
 }
