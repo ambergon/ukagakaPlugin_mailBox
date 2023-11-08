@@ -21,7 +21,7 @@ char* resBuf;
 FILE* ConsoleWindow;
 
 char* pluginDirectory;
-char* dbPATH;
+wchar_t* dbPATH;
 sqlite3 *db = NULL;
 
 static bool bootOne = false;
@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-#define Debug
+//#define Debug
 
 
 
@@ -56,13 +56,24 @@ extern "C" __declspec(dllexport) bool __cdecl load(HGLOBAL h, long len){
 
 
     int dbpathlen = strlen( pluginDirectory ) + strlen( "mailBox.db" ) + 1;
-    dbPATH = (char*)calloc( dbpathlen , sizeof(char) );
-    sprintf( dbPATH , "%smailBox.db" , pluginDirectory );
+    char* charDBpath = (char*)calloc( dbpathlen , sizeof(char) );
+    sprintf( charDBpath , "%smailBox.db" , pluginDirectory );
+
+    //パスの日本語対応化
+    char* oldLocale = setlocale( LC_ALL , NULL );
+    setlocale( LC_ALL , "" );
+    dbPATH = (wchar_t*)calloc( len + 1 + strlen( "mailBox.db" ) , sizeof( wchar_t ) );
+    mbstowcs(dbPATH , charDBpath, len + 1 + strlen( "mailBox.db" ));
+    setlocale( LC_ALL , oldLocale );
+
+    free( charDBpath );
+
 
     char* err = NULL;
     //一部のユーザはここで失敗していると思う。
     //dbパスに日本語が含まれているとかどうだ。
-    int res = sqlite3_open( dbPATH , &db );
+    int res = sqlite3_open16( dbPATH , &db );
+    //int res = sqlite3_open16( dbPATH , &db );
     int sqliteRes = sqlite3_exec( db , "create table mailBox( GhostMenuName text , MailID int , yyyymmdd int , Sender text , Title text , MailText text , Checked int );" , NULL , NULL , &err );
 #ifdef Debug
     if ( sqliteRes != 0 ) {
@@ -180,7 +191,7 @@ void SendMail( char* GhostMenuName , char* MailID , char* YYYY , char* MM , char
     if( strCheck != "" ){ return; }
 
 
-    sqlite3_open( dbPATH , &db );
+    sqlite3_open16( dbPATH , &db );
     int sqliteRes = sqlite3_exec( db , "create table mailBox( GhostMenuName text , MailID int , yyyymmdd int , Sender text , Title text , MailText text , Checked int );" , NULL , NULL , &err );
 #ifdef Debug
     if ( sqliteRes != 0 ) {
@@ -228,7 +239,7 @@ void DeleteMail( char* GhostMenuName , char* MailID ){
     strCheck = regex_replace( strMailID , regex( R"([0-9])" ) ,"" );
     if( strCheck != "" ){ return; }
 
-    sqlite3_open( dbPATH , &db );
+    sqlite3_open16( dbPATH , &db );
     string sqlDelete = "delete from mailBox where GhostMenuName ='" + strGhostMenuName + "' and MailID = '" + strMailID + "'";
     int sqliteRes = sqlite3_exec( db , sqlDelete.c_str() , NULL , NULL , &err );
 #ifdef Debug
@@ -256,7 +267,7 @@ int StatusMail( char* GhostMenuName , char* MailID ){
     if( strCheck != "" ){ return -1; }
 
     int mailStatus = 0;
-    sqlite3_open( dbPATH , &db );
+    sqlite3_open16( dbPATH , &db );
     string sqlSelect = "select * from mailBox where GhostMenuName ='" + strGhostMenuName + "' and MailID = '" + strMailID + "'";
     int sqliteRes = sqlite3_exec( db , sqlSelect.c_str() , callbackStatusMail , (void*)&mailStatus , &err );
 #ifdef Debug
@@ -403,7 +414,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
             streamYMD >> strYMD;
 
             char* err = NULL;
-            sqlite3_open( dbPATH , &db );
+            sqlite3_open16( dbPATH , &db );
             newMailCount = 0;
             string newMailList = "select * from mailBox where YYYYmmdd <= " + strYMD + " and Checked = 0" ;
             stringstream streamMailCount ;
@@ -506,7 +517,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 streamYMD >> strYMD;
 
                 char* err = NULL;
-                sqlite3_open( dbPATH , &db );
+                sqlite3_open16( dbPATH , &db );
                 string mailList = "select * from mailBox where YYYYmmdd <= " + strYMD + " and Checked = " + strChecked + " limit 20 offset " + strOffset ;
                 int sqliteRes = sqlite3_exec( db , mailList.c_str() , callbackMailList , NULL , &err );
 #ifdef Debug
@@ -556,7 +567,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
 
                 char* err = NULL;
-                sqlite3_open( dbPATH , &db );
+                sqlite3_open16( dbPATH , &db );
                 string moveMail = "update mailBox set Checked = 1 where GhostMenuName = '" + strGhostMenuName + "' and MailID = " + strMailID  ;
                 int sqliteRes = sqlite3_exec( db , moveMail.c_str() , NULL , NULL , &err );
 #ifdef Debug

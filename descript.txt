@@ -6,7 +6,9 @@ name,MailBox
 craftman,ambergon
 filename,main.dll
 
-id,f58ef886-8310-480a-aed2-801dd44bfc8e
+//old
+//id,f58ef886-8310-480a-aed2-801dd44bfc8e
+id,cfagffg-fffdc-ccff-facaga-fg0cfaaagf
 
 //メールチェック
 secondchangeinterval,180
