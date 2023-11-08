@@ -70,10 +70,7 @@ extern "C" __declspec(dllexport) bool __cdecl load(HGLOBAL h, long len){
 
 
     char* err = NULL;
-    //一部のユーザはここで失敗していると思う。
-    //dbパスに日本語が含まれているとかどうだ。
     int res = sqlite3_open16( dbPATH , &db );
-    //int res = sqlite3_open16( dbPATH , &db );
     int sqliteRes = sqlite3_exec( db , "create table mailBox( GhostMenuName text , MailID int , yyyymmdd int , Sender text , Title text , MailText text , Checked int );" , NULL , NULL , &err );
 #ifdef Debug
     if ( sqliteRes != 0 ) {
