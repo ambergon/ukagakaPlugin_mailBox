@@ -13,4 +13,4 @@ secondchangeinterval,10
 otherghosttalk,before
 
 //更新url
-homeurl,https://raw.githubusercontent.com/ambergon/ukagakaPlugin_mailBox/master
+homeurl,https://raw.githubusercontent.com/ambergon/ukagakaPlugin_mailBox/version
