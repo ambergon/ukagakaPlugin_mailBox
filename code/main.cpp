@@ -106,11 +106,11 @@ extern "C" __declspec(dllexport) bool __cdecl unload(void){
 //| GhostMenuName | MailID | YYYYmmdd | Sender | Title | MailText | Checked |
 //|               |        |          |        |       |          |         |
 int callbackMailList(void *anything, int keyCount, char **value, char **key){
-    s << "\\_a[OnOpenMail," << value[0] << "," << value[1] << "]" << value[3] << " : " << value[4] << "\\_a\\n";
+    s << "├┼\\_a[OnOpenMail," << value[0] << "," << value[1] << "]" << value[3] << " : " << value[4] << "\\_a\\n";
     return 0;
 }
 int callbackOpenMail(void *anything, int keyCount, char **value, char **key){
-    s << value[4] << "\\n\\n\\n" << value[5] << "\\n" ;
+    s << "   【" << value[4] << "】" << "\\n\\n" << value[5] << "\\n\\n\\n【" << value[0] << "】";
     return 0;
 }
 int callbackNewMailCount(void *anything, int keyCount, char **value, char **key){
@@ -492,12 +492,25 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 resBuf = res_buf;
             }
 
-
-
         ////Userが触る機能
         //メールボックス
+        //┌┬────────────┬┐
+        //├┼────────────┼┤
+        //   未読メール   
+        //├┼────────────┼┤
+        //├┼────────────┼┤
+        //   既読メール   
+        //├┼────────────┼┤
+        //└┴────────────┴┘
+        //┌ └ ┐ ┘ ├ ┤ ─ ┬ ┼ ┴
+        //\\_a[OnCheckMail,0,0] ───未読メール─── \\_a
+        //\\_a[OnCheckMail,1,0] ───既読メール─── \\_a┼
+
+
+
         } else if ( strcmp( ID , "OnMenuExec" ) == 0 ) {
-            char res_buf[] = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\_q\\_a[OnCheckMail,0,0]未読メール\\_a\\n\\_a[OnCheckMail,1,0]既読メール\\_a\\_q\r\nScriptOption: nobreak,notranslate\r\n\r\n";
+            char res_buf[] = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\_q \\n┌┬────────────┬┐ \\n├┼────────────┼┤ \\n├┼\\_a[OnCheckMail,0,0] ───未読メール─── \\_a┼┤ \\n├┼────────────┼┤ \\n├┼────────────┼┤ \\n├┼\\_a[OnCheckMail,1,0] ───既読メール─── \\_a┼┤ \\n├┼────────────┼┤ \\n└┴────────────┴┘ \\_q \r\nScriptOption: nobreak,notranslate\r\n\r\n";
+            //char res_buf[] = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\_q\\_a[OnCheckMail,0,0]未読メール\\_a\\n\\_a[OnCheckMail,1,0]既読メール\\_a\\_q\r\nScriptOption: nobreak,notranslate\r\n\r\n";
             resBuf = res_buf;
 
 
@@ -533,12 +546,12 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 string start        = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\0\\b[2]\\_q";
                 string backSelect;
                 if( offset < 20 ){
-                    backSelect   = "----最新----\\n";
+                    backSelect   = "┌┬──────最新──────\\n";
                 } else {
-                    backSelect   = "\\_a[OnCheckMail," + strChecked + "," + to_string( offset - 20 ) + "]前の20件\\_a\\n";
+                    backSelect   = "┌┬\\_a[OnCheckMail," + strChecked + "," + to_string( offset - 20 ) + "]─────前の20件─────\\_a\\n";
                 }
                 string nextSelect;
-                nextSelect   = "\\_a[OnCheckMail," + strChecked + "," + to_string( offset + 20 ) + "]次の20件\\_a\\n";
+                nextSelect   = "└┴\\_a[OnCheckMail," + strChecked + "," + to_string( offset + 20 ) + "]─────次の20件─────\\_a\\n";
 
                 string end          = "\\_q\r\nScriptOption: nobreak,notranslate\r\n\r\n";
                 string selectRes    = s.str();
