@@ -9,7 +9,7 @@ filename,main.dll
 id,cfagffgf-ffdc-ccff-faca-gafg0cfaaagf
 
 //メールチェック
-secondchangeinterval,180
+secondchangeinterval,10
 otherghosttalk,before
 
 //更新url
