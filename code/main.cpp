@@ -13,7 +13,6 @@
 using namespace std;
 
 static stringstream s;
-static int newMailCount = 0;
 
 typedef void* HGLOBAL;
 char* resBuf;
@@ -113,7 +112,7 @@ int callbackOpenMail(void *anything, int keyCount, char **value, char **key){
     return 0;
 }
 int callbackNewMailCount(void *anything, int keyCount, char **value, char **key){
-    newMailCount++;
+    *(int*)anything = *(int*)anything + 1;
     return 0;
 }
 int callbackStatusMail(void *anything, int keyCount, char **value, char **key){
@@ -200,11 +199,6 @@ void SendMail( char* GhostMenuName , char* MailID , char* YYYY , char* MM , char
         printf( "%s\n" , err );
     }
 #endif
-    //int createTable = sqlite3_exec( db , "create table mailBox( GhostMenuName text , MailID int , yyyymmdd int , Sender text , Title text , MailText text , Checked int );" , NULL , NULL , &err );
-    //if ( createTable == 1 ) {
-    //    printf( "%s\n" , err );
-    //}
-
 
     string sqlDelete = "delete from mailBox where GhostMenuName ='" + strGhostMenuName + "' and MailID = '" + strMailID + "'";
     sqliteRes = sqlite3_exec( db , sqlDelete.c_str() , NULL , NULL , &err );
@@ -399,10 +393,8 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
             char res_buf[] = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nValue: 1.0.0\r\n\r\n";
             resBuf = res_buf;
 
-
-
         //起動時のメールチェック
-        } else if ( strcmp( ID , "OnSecondChange" ) == 0 && bootOne == false ) {
+        } else if ( strcmp( ID , "OnSecondChange" ) == 0 && bootOne == false || strcmp( ID , "OnCheckNewMail" ) == 0 ) {
             //処理が必要なのは、今の日付を取得してselect文を廻す必要があるが、
             bootOne = true;
 
@@ -417,11 +409,11 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
             char* err = NULL;
             sqlite3_open16( dbPATH , &db );
-            newMailCount = 0;
+            int newMailCount = 0;
             string newMailList = "select * from mailBox where YYYYmmdd <= " + strYMD + " and Checked = 0" ;
             stringstream streamMailCount ;
 
-            int sqliteRes = sqlite3_exec( db , newMailList.c_str() , callbackNewMailCount , NULL , &err );
+            int sqliteRes = sqlite3_exec( db , newMailList.c_str() , callbackNewMailCount , (void*)&newMailCount , &err );
 #ifdef Debug
     if ( sqliteRes != 0 ) {
         printf( "%s\n" , err );
