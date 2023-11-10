@@ -104,7 +104,8 @@ extern "C" __declspec(dllexport) bool __cdecl unload(void){
 //|               |        |          |        |       |          |         |
 //anything = offset
 int callbackMailList(void *anything, int keyCount, char **value, char **key){
-    s << "├┼\\_a[OnOpenMail," << value[0] << "," << value[1] << "," << *(int*)anything << "]" << value[3] << " : " << value[4] << "\\_a\\n";
+    s << "├┼\\q[" << value[3] << " : " << value[4] << ",OnOpenMail," << value[0] << "," << value[1] << "," << *(int*)anything << "]\\n";
+    //s << "├┼\\_a[OnOpenMail," << value[0] << "," << value[1] << "," << *(int*)anything << "]" << value[3] << " : " << value[4] << "\\_a\\n";
     return 0;
 }
 int callbackOpenMail(void *anything, int keyCount, char **value, char **key){
@@ -496,13 +497,13 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
         //\\_a[OnCheckMail,0,0] ───未読メール─── \\_a
         //\\_a[OnCheckMail,1,0] ───既読メール─── \\_a┼
         } else if ( strcmp( ID , "OnMenuExec" ) == 0 ) {
-            char res_buf[] = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\_q \\n┌┬────────────┬┐ \\n├┼────────────┼┤ \\n├┼\\_a[OnCheckMail,0,0] ───未読メール─── \\_a┼┤ \\n├┼────────────┼┤ \\n├┼────────────┼┤ \\n├┼\\_a[OnCheckMail,1,0] ───既読メール─── \\_a┼┤ \\n├┼────────────┼┤ \\n└┴────────────┴┘ \\_q \r\nScriptOption: nobreak,notranslate\r\n\r\n";
+            char res_buf[] = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\_q┌┬────────────┬┐ \\n├┼────────────┼┤ \\n├┼ \\q[───未読メール───,OnCheckMail,0,0] ┼┤ \\n├┼────────────┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[───既読メール───,OnCheckMail,1,0] ┼┤ \\n├┼────────────┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[────閉じる────,] ┼┤ \\n├┼────────────┼┤ \\n└┴────────────┴┘ \\_q \r\nScriptOption: nobreak,notranslate\r\n\r\n";
             //char res_buf[] = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\_q\\_a[OnCheckMail,0,0]未読メール\\_a\\n\\_a[OnCheckMail,1,0]既読メール\\_a\\_q\r\nScriptOption: nobreak,notranslate\r\n\r\n";
             resBuf = res_buf;
 
 
-        //第1引数 未読 = 0 , 既読 = 1
-        //第2引数 offset
+        //第0引数 未読 = 0 , 既読 = 1
+        //第1引数 offset
         } else if ( strcmp( ID , "OnCheckMail" ) == 0 ) {
             if ( Reference0 != NULL && Reference1 != NULL ) {
                 string strID        = ID;
@@ -533,16 +534,22 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 string start        = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\0\\b[2]\\_q";
                 string backSelect;
                 if( offset < 20 ){
-                    backSelect   = "┌┬──────最新──────\\n";
+                    backSelect   = "┌┬──────最新──────┬┐\\n";
                 } else {
-                    backSelect   = "┌┬\\_a[OnCheckMail," + strChecked + "," + to_string( offset - 20 ) + "]─────前の20件─────\\_a\\n";
+                    backSelect   = "┌┬\\_a[OnCheckMail," + strChecked + "," + to_string( offset - 20 ) + "]─────前の20件─────\\_a┬┐\\n";
+                }
+                string exitSelect;
+                if( strChecked == "0" ){
+                    exitSelect = "┌┬\\q[─────閉じる──────,]┬┐\\n└┴\\q[────既読メール─────,OnCheckMail,1,0]┴┘\\n\\n";
+                } else {
+                    exitSelect = "┌┬\\q[─────閉じる──────,]┬┐\\n└┴\\q[────未読メール─────,OnCheckMail,0,0]┴┘\\n\\n";
                 }
                 string nextSelect;
-                nextSelect   = "└┴\\_a[OnCheckMail," + strChecked + "," + to_string( offset + 20 ) + "]─────次の20件─────\\_a\\n";
+                nextSelect   = "└┴\\_a[OnCheckMail," + strChecked + "," + to_string( offset + 20 ) + "]─────次の20件─────\\_a┴┘\\n";
 
                 string end          = "\\_q\r\nScriptOption: nobreak,notranslate\r\n\r\n";
                 string selectRes    = s.str();
-                string total        = start + backSelect + selectRes + nextSelect + end;
+                string total        = start + exitSelect + backSelect + selectRes + nextSelect + end;
                 int i               = strlen( total.c_str() );
 
                 char* res_buf;
