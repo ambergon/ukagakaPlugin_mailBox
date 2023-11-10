@@ -39,10 +39,12 @@
 - [GitHub - ambergon/ukagakaSaori_DiffCalendar](https://github.com/ambergon/ukagakaSaori_DiffCalendar)
 
 ```
+//SendおよびDeleteではraiseよりnotifyを使用することを推奨
+
 //サクラスクリプト
-"\![raiseplugin,MailBox,OnSendMail,メールのID,送信年,送信月,送信日,送信者名,メールタイトル,メール本文]"
+"\![notifyplugin,MailBox,OnSendMail,メールのID,送信年,送信月,送信日,送信者名,メールタイトル,メール本文]"
 //例文
-"\![raiseplugin,MailBox,OnSendMail,0,%(year),%(month),%(day),琥珀,初めまして,無事に届いていますか?]"
+"\![notifyplugin,MailBox,OnSendMail,0,%(year),%(month),%(day),琥珀,初めまして,無事に届いていますか?]"
 ```
 
 メール内容にサクラスクリプトのリンクなどを組み込むことは可能ですが、メールの表示は現在表示中のゴーストに使用されるため、あまり使用する機会はないでしょう。
@@ -57,7 +59,9 @@
 例えば、最後の起動からN日後に送信するようにしたとします。
 それより早く起動された場合などに使用することを想定しています。
 ```
-"\![raiseplugin,MailBox,OnDeleteMail,メールID]"
+"\![notifyplugin,MailBox,OnDeleteMail,メールID]"
+//SendおよびDeleteではraiseよりnotifyを使用することを推奨
+//"\![raiseplugin,MailBox,OnDeleteMail,メールID]"
 ```
 
 
