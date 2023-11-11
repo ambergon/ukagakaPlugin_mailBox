@@ -12,6 +12,7 @@
 
 using namespace std;
 
+static string strYMD;
 static stringstream s;
 
 typedef void* HGLOBAL;
@@ -119,15 +120,6 @@ int callbackStatusMail(void *anything, int keyCount, char **value, char **key){
     string Checked      = value[6];
     string nowYYYYmmdd  = value[2];
 
-    string strYMD;
-    stringstream streamYMD;
-    time_t t = time(nullptr);
-    const tm* localTime = localtime(&t);
-    streamYMD << localTime->tm_year + 1900;
-    streamYMD << setw(2) << setfill('0') << localTime->tm_mon + 1;
-    streamYMD << setw(2) << setfill('0') << localTime->tm_mday;
-    streamYMD >> strYMD;
-
     int now     = atoi( strYMD.c_str() );
     int mailDay = atoi( nowYYYYmmdd.c_str() );
     //届いてない
@@ -142,8 +134,6 @@ int callbackStatusMail(void *anything, int keyCount, char **value, char **key){
             *(int*)anything = 3;
         }
     }
-    streamYMD.str("");
-    streamYMD.clear( stringstream::goodbit );
     return 0;
 }
 
@@ -261,6 +251,18 @@ int StatusMail( char* GhostMenuName , char* MailID ){
     string strCheck;
     strCheck = regex_replace( strMailID , regex( R"([0-9])" ) ,"" );
     if( strCheck != "" ){ return -1; }
+
+    strYMD = "";
+    stringstream streamYMD;
+    time_t t = time(nullptr);
+    const tm* localTime = localtime(&t);
+    streamYMD << localTime->tm_year + 1900;
+    streamYMD << setw(2) << setfill('0') << localTime->tm_mon + 1;
+    streamYMD << setw(2) << setfill('0') << localTime->tm_mday;
+    streamYMD >> strYMD;
+    streamYMD.str("");
+    streamYMD.clear( stringstream::goodbit );
+
 
     int mailStatus = 0;
     sqlite3_open16( dbPATH , &db );
@@ -463,6 +465,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
 
         //メールの状態を確認する機能
+        //第0引数 メールID
         } else if ( strcmp( ID , "OnStatusMail" ) == 0 ) {
             if ( Reference0 != NULL ){
                 int mailStatus = StatusMail( Sender , Reference0 );
@@ -482,6 +485,44 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
                 resBuf = res_buf;
             }
+
+
+        //引数-区切りで
+        //第0引数 : メールID-メールID-メールID-...
+        //返却先  : OnMailsStatus
+        //返り値0 : 受けた引数0
+        //返り値1 : ステータス-ステータス-ステータス---...
+        } else if ( strcmp( ID , "OnStatusMails" ) == 0 ) {
+            if ( Reference0 != NULL ){
+
+                string Rzero = Reference0;
+
+                char* MailID ;
+                char  statusMailsSep[]    = "-";
+                MailID = strtok( Reference0 , statusMailsSep );
+                stringstream a;
+                while( MailID != NULL ){
+                    int mailStatus = StatusMail( Sender , MailID );
+                    a << mailStatus << "-";
+                    MailID = strtok( NULL , statusMailsSep );
+                }
+                string mailsStatus ; 
+                mailsStatus = regex_replace( a.str().c_str() , regex( "-$" ) ,"" );
+                a.str("");
+                a.clear( stringstream::goodbit );
+                
+                if ( mailsStatus != "" ){
+                    string strMailsStatus;
+                    strMailsStatus = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nEvent: OnMailsStatus\r\nReference0: " + Rzero + "\r\nReference1: " + mailsStatus + "\r\n\r\n";
+                    int i = strlen( strMailsStatus.c_str() );
+                    char* res_buf;
+                    res_buf = (char*)calloc( i + 1 , sizeof(char) );
+                    memcpy( res_buf , strMailsStatus.c_str() , i );
+
+                    resBuf = res_buf;
+                }
+            }
+
 
         ////Userが触る機能
         //メールボックス
