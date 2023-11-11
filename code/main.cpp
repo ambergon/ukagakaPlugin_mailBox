@@ -555,7 +555,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
                 char* err = NULL;
                 sqlite3_open16( dbPATH , &db );
-                string mailList = "select * from mailBox where YYYYmmdd <= " + strYMD + " and Checked = " + strChecked + " limit 20 offset " + strOffset ;
+                string mailList = "select * from mailBox where YYYYmmdd <= " + strYMD + " and Checked = " + strChecked + " order by YYYYmmdd desc,MailID desc limit 20 offset " + strOffset ;
                 int sqliteRes = sqlite3_exec( db , mailList.c_str() , callbackMailList , (void*)&offset , &err );
 #ifdef Debug
                 if ( sqliteRes != 0 ){
