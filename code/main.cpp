@@ -655,6 +655,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
         //要求したゴーストのが今まで送信したすべてのIDを取得する。
         } else if ( strcmp( ID , "OnGetAllMailID" ) == 0 ) {
+            //printf( "call\n" );
 
             char* err = NULL;
             string strGhostMenuName  = Sender;
@@ -662,6 +663,8 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
             sqlite3_open16( dbPATH , &db );
             string sqlSelect = "select * from mailBox where GhostMenuName ='" + strGhostMenuName + "' order by MailID asc";
+
+            //printf( "%s\n" , sqlSelect.c_str() );
             int sqliteRes = sqlite3_exec( db , sqlSelect.c_str() , callbackAllMailID, NULL , &err );
 
 #ifdef Debug
