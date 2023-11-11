@@ -98,6 +98,7 @@ extern "C" __declspec(dllexport) bool __cdecl unload(void){
 }
 
 
+//Notified
 
 //|               |        |          |        |       |          |         |
 //| GhostMenuName | MailID | YYYYmmdd | Sender | Title | MailText | Checked |
@@ -105,7 +106,6 @@ extern "C" __declspec(dllexport) bool __cdecl unload(void){
 //anything = offset
 int callbackMailList(void *anything, int keyCount, char **value, char **key){
     s << "├┼\\q[" << value[3] << " : " << value[4] << ",OnOpenMail," << value[0] << "," << value[1] << "," << *(int*)anything << "]\\n";
-    //s << "├┼\\_a[OnOpenMail," << value[0] << "," << value[1] << "," << *(int*)anything << "]" << value[3] << " : " << value[4] << "\\_a\\n";
     return 0;
 }
 int callbackOpenMail(void *anything, int keyCount, char **value, char **key){
@@ -136,6 +136,10 @@ int callbackStatusMail(void *anything, int keyCount, char **value, char **key){
     }
     return 0;
 }
+int callbackAllMailID(void *anything, int keyCount, char **value, char **key){
+    s << value[1] << "-";
+    return 0;
+}
 
 
 //|               |        |          |        |       |          |         |
@@ -146,7 +150,7 @@ void SendMail( char* GhostMenuName , char* MailID , char* YYYY , char* MM , char
     char* err = NULL;
 
     string strGhostMenuName  = GhostMenuName;
-    strGhostMenuName         = regex_replace( GhostMenuName , regex( "'" ) ,"\"" );
+    strGhostMenuName         = regex_replace( GhostMenuName , regex( "'" ) ,"" );
 
     string strMailID         = MailID       ;
 
@@ -170,13 +174,13 @@ void SendMail( char* GhostMenuName , char* MailID , char* YYYY , char* MM , char
     if( strCheck != "" ){ return; }
 
     string strSender        = Sender       ;
-    strSender               = regex_replace( strSender , regex( "'" ) ,"\"" );
+    strSender               = regex_replace( strSender , regex( "'" ) ,"" );
     strSender               = regex_replace( strSender , regex( "vanish" ) ,"危険な文字" );
     string strTitle         = Title        ;
-    strTitle                = regex_replace( strTitle , regex( "'" ) ,"\"" );
+    strTitle                = regex_replace( strTitle , regex( "'" ) ,"" );
     strTitle                = regex_replace( strTitle , regex( "vanish" ) ,"危険な文字" );
     string strMailText      = MailText     ;
-    strMailText             = regex_replace( strMailText , regex( "'" ) ,"\"" );
+    strMailText             = regex_replace( strMailText , regex( "'" ) ,"" );
     strMailText             = regex_replace( strMailText , regex( "vanish" ) ,"危険な文字" );
 
 
@@ -217,7 +221,7 @@ void DeleteMail( char* GhostMenuName , char* MailID ){
     char* err = NULL;
 
     string strGhostMenuName  = GhostMenuName;
-    strGhostMenuName         = regex_replace( GhostMenuName , regex( "'" ) ,"\"" );
+    strGhostMenuName         = regex_replace( GhostMenuName , regex( "'" ) ,"" );
 
     string strMailID         = MailID       ;
 
@@ -244,7 +248,7 @@ int StatusMail( char* GhostMenuName , char* MailID ){
     char* err = NULL;
 
     string strGhostMenuName  = GhostMenuName;
-    strGhostMenuName         = regex_replace( GhostMenuName , regex( "'" ) ,"\"" );
+    strGhostMenuName         = regex_replace( GhostMenuName , regex( "'" ) ,"" );
 
     string strMailID         = MailID       ;
 
@@ -647,6 +651,42 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 s.str("");
                 s.clear( stringstream::goodbit );
             }
+
+
+        //要求したゴーストのが今まで送信したすべてのIDを取得する。
+        } else if ( strcmp( ID , "OnGetAllMailID" ) == 0 ) {
+
+            char* err = NULL;
+            string strGhostMenuName  = Sender;
+            strGhostMenuName         = regex_replace( strGhostMenuName , regex( "'" ) ,"" );
+
+            sqlite3_open16( dbPATH , &db );
+            string sqlSelect = "select * from mailBox where GhostMenuName ='" + strGhostMenuName + "' order by MailID asc";
+            int sqliteRes = sqlite3_exec( db , sqlSelect.c_str() , callbackAllMailID, NULL , &err );
+
+#ifdef Debug
+            if ( sqliteRes != 0 ) {
+                printf( "%s\n" , err );
+            }
+#endif
+            sqlite3_close( db );
+
+            string MailIDs = regex_replace( s.str() , regex( "-$" ) ,"" );
+            s.str("");
+            s.clear( stringstream::goodbit );
+
+            if ( MailIDs != "" ){
+                string strGetAllMailID;
+                strGetAllMailID = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nEvent: OnAllMailID\r\nReference0: " + MailIDs + "\r\n\r\n";
+                int i = strlen( strGetAllMailID.c_str() );
+                char* res_buf;
+                res_buf = (char*)calloc( i + 1 , sizeof(char) );
+                memcpy( res_buf , strGetAllMailID.c_str() , i );
+
+                resBuf = res_buf;
+            }
+
+
 
         } else if ( strcmp( ID , "OnOtherGhostTalk" ) == 0 ) {
         //} else if ( strcmp( ID , "" ) == 0 ) {
