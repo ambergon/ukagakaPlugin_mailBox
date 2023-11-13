@@ -12,13 +12,10 @@
 
 using namespace std;
 
-static string strYMD;
-static stringstream s;
+FILE* ConsoleWindow;
 
 typedef void* HGLOBAL;
 char* resBuf;
-
-FILE* ConsoleWindow;
 
 char* pluginDirectory;
 wchar_t* dbPATH;
@@ -26,12 +23,15 @@ sqlite3 *db = NULL;
 
 static bool bootOne = false;
 
+static string strYMD;
+static stringstream s;
+
 int main(int argc, char* argv[]) {
     printf( "%s\n" , argv[0] );
     return 0;
 }
 
-//#define Debug
+#define Debug
 
 
 
@@ -71,7 +71,7 @@ extern "C" __declspec(dllexport) bool __cdecl load(HGLOBAL h, long len){
 
     char* err = NULL;
     int res = sqlite3_open16( dbPATH , &db );
-    int sqliteRes = sqlite3_exec( db , "create table mailBox( GhostMenuName text , MailID int , yyyymmdd int , Sender text , Title text , MailText text , Checked int );" , NULL , NULL , &err );
+    int sqliteRes = sqlite3_exec( db , "create table mailBox2( GhostMenuName text , MailID int , yyyymmdd int , hour int , Sender text , Title text , MailText text , Checked int , Notified int );" , NULL , NULL , &err );
 #ifdef Debug
     if ( sqliteRes != 0 ) {
         printf( "%s\n" , err );
@@ -100,16 +100,19 @@ extern "C" __declspec(dllexport) bool __cdecl unload(void){
 
 //Notified
 
-//|               |        |          |        |       |          |         |
+//| 旧mailBox     |        |          |        |       |          |         | 
 //| GhostMenuName | MailID | YYYYmmdd | Sender | Title | MailText | Checked |
-//|               |        |          |        |       |          |         |
+//
+//| mailBox2      |        |          |      |        |       |          |         |  
+//| GhostMenuName | MailID | YYYYmmdd | hour | Sender | Title | MailText | Checked | Notified
+//|               |        |          |      |        |       |          |         |
 //anything = offset
 int callbackMailList(void *anything, int keyCount, char **value, char **key){
-    s << "├┼\\q[" << value[3] << " : " << value[4] << ",OnOpenMail," << value[0] << "," << value[1] << "," << *(int*)anything << "]\\n";
+    s << "├┼\\q[" << value[4] << " : " << value[5] << ",OnOpenMail," << value[0] << "," << value[1] << "," << *(int*)anything << "]\\n";
     return 0;
 }
 int callbackOpenMail(void *anything, int keyCount, char **value, char **key){
-    s << "   【" << value[4] << "】" << "\\n\\n" << value[5] << "\\n\\n\\n   【" << value[0] << "】";
+    s << "   【" << value[5] << "】" << "\\n\\n" << value[6] << "\\n\\n\\n   【" << value[0] << "】";
     return 0;
 }
 int callbackNewMailCount(void *anything, int keyCount, char **value, char **key){
@@ -117,7 +120,7 @@ int callbackNewMailCount(void *anything, int keyCount, char **value, char **key)
     return 0;
 }
 int callbackStatusMail(void *anything, int keyCount, char **value, char **key){
-    string Checked      = value[6];
+    string Checked      = value[7];
     string nowYYYYmmdd  = value[2];
 
     int now     = atoi( strYMD.c_str() );
@@ -137,14 +140,11 @@ int callbackStatusMail(void *anything, int keyCount, char **value, char **key){
     return 0;
 }
 int callbackAllMailID(void *anything, int keyCount, char **value, char **key){
-    s << value[1] << "-";
+    s << value[1] << ":";
     return 0;
 }
 
 
-//|               |        |          |        |       |          |         |
-//| GhostMenuName | MailID | YYYYmmdd | Sender | Title | MailText | Checked |
-//|               |        |          |        |       |          |         |
 void SendMail( char* GhostMenuName , char* MailID , char* YYYY , char* MM , char* DD , char* Sender , char* Title , char* MailText ){
     //引数が正しくなくnullの可能性。足りない場合の処理
     char* err = NULL;
@@ -187,22 +187,23 @@ void SendMail( char* GhostMenuName , char* MailID , char* YYYY , char* MM , char
 
 
     sqlite3_open16( dbPATH , &db );
-    int sqliteRes = sqlite3_exec( db , "create table mailBox( GhostMenuName text , MailID int , yyyymmdd int , Sender text , Title text , MailText text , Checked int );" , NULL , NULL , &err );
+    int sqliteRes = sqlite3_exec( db , "create table mailBox2( GhostMenuName text , MailID int , yyyymmdd int , hour int , Sender text , Title text , MailText text , Checked int , Notified int );" , NULL , NULL , &err );
 #ifdef Debug
     if ( sqliteRes != 0 ) {
         printf( "%s\n" , err );
     }
 #endif
 
-    string sqlDelete = "delete from mailBox where GhostMenuName ='" + strGhostMenuName + "' and MailID = '" + strMailID + "'";
+    string sqlDelete = "delete from mailBox2 where GhostMenuName ='" + strGhostMenuName + "' and MailID = '" + strMailID + "'";
     sqliteRes = sqlite3_exec( db , sqlDelete.c_str() , NULL , NULL , &err );
+    //sqliteRes = sqlite3_exec( db , sqlDelete.c_str() , NULL , NULL , &err );
 #ifdef Debug
     if ( sqliteRes != 0 ) {
         printf( "%s\n" , err );
     }
 #endif
 
-    string sqlInsert = "insert into mailBox values( '" + strGhostMenuName + "' , " + strMailID + " , " + strYYYYmmdd + " , '" + strSender + "' , '" + strTitle + "' , '" + strMailText + "' , 0)"; 
+    string sqlInsert = "insert into mailBox2 values( '" + strGhostMenuName + "' , " + strMailID + " , " + strYYYYmmdd + " , 0 , '" + strSender + "' , '" + strTitle + "' , '" + strMailText + "' , 0 , 0 )"; 
     sqliteRes = sqlite3_exec( db , sqlInsert.c_str() , NULL , NULL , &err );
 #ifdef Debug
     if ( sqliteRes != 0 ) {
@@ -230,7 +231,7 @@ void DeleteMail( char* GhostMenuName , char* MailID ){
     if( strCheck != "" ){ return; }
 
     sqlite3_open16( dbPATH , &db );
-    string sqlDelete = "delete from mailBox where GhostMenuName ='" + strGhostMenuName + "' and MailID = '" + strMailID + "'";
+    string sqlDelete = "delete from mailBox2 where GhostMenuName ='" + strGhostMenuName + "' and MailID = '" + strMailID + "'";
     int sqliteRes = sqlite3_exec( db , sqlDelete.c_str() , NULL , NULL , &err );
 #ifdef Debug
     if ( sqliteRes != 0 ) {
@@ -270,7 +271,7 @@ int StatusMail( char* GhostMenuName , char* MailID ){
 
     int mailStatus = 0;
     sqlite3_open16( dbPATH , &db );
-    string sqlSelect = "select * from mailBox where GhostMenuName ='" + strGhostMenuName + "' and MailID = '" + strMailID + "'";
+    string sqlSelect = "select * from mailBox2 where GhostMenuName ='" + strGhostMenuName + "' and MailID = '" + strMailID + "'";
     int sqliteRes = sqlite3_exec( db , sqlSelect.c_str() , callbackStatusMail , (void*)&mailStatus , &err );
 #ifdef Debug
     if ( sqliteRes != 0 ) {
@@ -416,7 +417,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
             char* err = NULL;
             sqlite3_open16( dbPATH , &db );
             int newMailCount = 0;
-            string newMailList = "select * from mailBox where YYYYmmdd <= " + strYMD + " and Checked = 0" ;
+            string newMailList = "select * from mailBox2 where YYYYmmdd <= " + strYMD + " and Checked = 0" ;
             stringstream streamMailCount ;
 
             int sqliteRes = sqlite3_exec( db , newMailList.c_str() , callbackNewMailCount , (void*)&newMailCount , &err );
@@ -502,16 +503,16 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 string Rzero = Reference0;
 
                 char* MailID ;
-                char  statusMailsSep[]    = "-";
+                char  statusMailsSep[]    = ":";
                 MailID = strtok( Reference0 , statusMailsSep );
                 stringstream a;
                 while( MailID != NULL ){
                     int mailStatus = StatusMail( Sender , MailID );
-                    a << mailStatus << "-";
+                    a << mailStatus << ":";
                     MailID = strtok( NULL , statusMailsSep );
                 }
                 string mailsStatus ; 
-                mailsStatus = regex_replace( a.str().c_str() , regex( "-$" ) ,"" );
+                mailsStatus = regex_replace( a.str().c_str() , regex( ":$" ) ,"" );
                 a.str("");
                 a.clear( stringstream::goodbit );
                 
@@ -559,7 +560,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
                 char* err = NULL;
                 sqlite3_open16( dbPATH , &db );
-                string mailList = "select * from mailBox where YYYYmmdd <= " + strYMD + " and Checked = " + strChecked + " order by YYYYmmdd desc,MailID desc limit 20 offset " + strOffset ;
+                string mailList = "select * from mailBox2 where YYYYmmdd <= " + strYMD + " and Checked = " + strChecked + " order by YYYYmmdd desc,MailID desc limit 20 offset " + strOffset ;
                 int sqliteRes = sqlite3_exec( db , mailList.c_str() , callbackMailList , (void*)&offset , &err );
 #ifdef Debug
                 if ( sqliteRes != 0 ){
@@ -618,7 +619,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
                 char* err = NULL;
                 sqlite3_open16( dbPATH , &db );
-                string moveMail = "update mailBox set Checked = 1 where GhostMenuName = '" + strGhostMenuName + "' and MailID = " + strMailID  ;
+                string moveMail = "update mailBox2 set Checked = 1 where GhostMenuName = '" + strGhostMenuName + "' and MailID = " + strMailID  ;
                 int sqliteRes = sqlite3_exec( db , moveMail.c_str() , NULL , NULL , &err );
 #ifdef Debug
                 if ( sqliteRes != 0 ) {
@@ -627,7 +628,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 #endif
 
                 //printf( "Update%s\n" , err );
-                string openMail = "select * from mailBox where GhostMenuName = '" + strGhostMenuName + "' and MailID = " + strMailID  ;
+                string openMail = "select * from mailBox2 where GhostMenuName = '" + strGhostMenuName + "' and MailID = " + strMailID  ;
                 sqliteRes = sqlite3_exec( db , openMail.c_str() , callbackOpenMail , NULL , &err );
 #ifdef Debug
                 if ( sqliteRes != 0 ) {
@@ -655,16 +656,12 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
         //要求したゴーストのが今まで送信したすべてのIDを取得する。
         } else if ( strcmp( ID , "OnGetAllMailID" ) == 0 ) {
-            //printf( "call\n" );
-
             char* err = NULL;
             string strGhostMenuName  = Sender;
             strGhostMenuName         = regex_replace( strGhostMenuName , regex( "'" ) ,"" );
 
             sqlite3_open16( dbPATH , &db );
-            string sqlSelect = "select * from mailBox where GhostMenuName ='" + strGhostMenuName + "' order by MailID asc";
-
-            //printf( "%s\n" , sqlSelect.c_str() );
+            string sqlSelect = "select * from mailBox2 where GhostMenuName ='" + strGhostMenuName + "' order by MailID asc";
             int sqliteRes = sqlite3_exec( db , sqlSelect.c_str() , callbackAllMailID, NULL , &err );
 
 #ifdef Debug
@@ -674,7 +671,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 #endif
             sqlite3_close( db );
 
-            string MailIDs = regex_replace( s.str() , regex( "-$" ) ,"" );
+            string MailIDs = regex_replace( s.str() , regex( ":$" ) ,"" );
             s.str("");
             s.clear( stringstream::goodbit );
 

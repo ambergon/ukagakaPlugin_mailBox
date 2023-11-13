@@ -35,8 +35,8 @@ int main(int argc, char* argv[]) {
 
 
 
-    int res = sqlite3_exec( db , "create table TestTable( id int , word text );" , NULL , NULL , &err );
-    res = sqlite3_exec( db , "insert into TestTable values( 1 , 'Do' );" , NULL , NULL , &err );
+    int res = sqlite3_exec( db , "create table TestTable( id int , word text , X text default 'X' );" , NULL , NULL , &err );
+    res = sqlite3_exec( db , "insert into TestTable( id , word ) values( 1 , 'Do' );" , NULL , NULL , &err );
     if( res != 0 ){
         printf( "%s\n" , err );
     }
