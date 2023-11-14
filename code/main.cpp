@@ -21,8 +21,6 @@ char* pluginDirectory;
 wchar_t* dbPATH;
 sqlite3 *db = NULL;
 
-static bool bootOne = false;
-
 static string strYMD;
 static stringstream s;
 
@@ -31,7 +29,10 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-#define Debug
+static int NewMail   = 0;
+static int SecChange = 60;
+
+//#define Debug
 
 
 
@@ -400,57 +401,43 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
             char res_buf[] = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nValue: 1.0.0\r\n\r\n";
             resBuf = res_buf;
 
-        //起動時のメールチェック
-        } else if ( strcmp( ID , "OnSecondChange" ) == 0 && bootOne == false || strcmp( ID , "OnCheckNewMail" ) == 0 ) {
-            //処理が必要なのは、今の日付を取得してselect文を廻す必要があるが、
-            bootOne = true;
 
-            string strYMD;
-            stringstream streamYMD;
-            time_t t = time(nullptr);
-            const tm* localTime = localtime(&t);
-            streamYMD << localTime->tm_year + 1900;
-            streamYMD << setw(2) << setfill('0') << localTime->tm_mon + 1;
-            streamYMD << setw(2) << setfill('0') << localTime->tm_mday;
-            streamYMD >> strYMD;
+        //1秒ないし、短期間でループさせる。
+        //回転数はこっちで制限を用意して決める。
+        //一時間に一回程度で大丈夫だけど、
+        //起動時にほしい。
+        } else if ( strcmp( ID , "OnSecondChange" ) == 0 || strcmp( ID , "OnCheckNewMail" ) == 0 ) {
+            SecChange++;
+            //一分毎に実行
+            //一時間ごとにチェック。初回は起動時。
+            if ( SecChange > 60){
+                SecChange = 0;
 
-            char* err = NULL;
-            sqlite3_open16( dbPATH , &db );
-            int newMailCount = 0;
-            string newMailList = "select * from mailBox2 where YYYYmmdd <= " + strYMD + " and Checked = 0" ;
-            stringstream streamMailCount ;
+                string strYMD;
+                stringstream streamYMD;
+                time_t t = time(nullptr);
+                const tm* localTime = localtime(&t);
+                streamYMD << localTime->tm_year + 1900;
+                streamYMD << setw(2) << setfill('0') << localTime->tm_mon + 1;
+                streamYMD << setw(2) << setfill('0') << localTime->tm_mday;
+                streamYMD >> strYMD;
+                streamYMD.str("");
+                streamYMD.clear( stringstream::goodbit );
 
-            int sqliteRes = sqlite3_exec( db , newMailList.c_str() , callbackNewMailCount , (void*)&newMailCount , &err );
-#ifdef Debug
-    if ( sqliteRes != 0 ) {
-        printf( "%s\n" , err );
-    }
-#endif
-            streamMailCount << newMailCount;
-            //printf( "Select%s\n" , err );
-            sqlite3_close( db );
+                char* err = NULL;
+                sqlite3_open16( dbPATH , &db );
+                int newMailCount = 0;
+                string newMailList = "select * from mailBox2 where YYYYmmdd <= " + strYMD + " and Notified = 0" ;
+                int sqliteRes = sqlite3_exec( db , newMailList.c_str() , callbackNewMailCount , (void*)&newMailCount , &err );
+                string moveMail = "update mailBox2 set Notified = 1 where YYYYmmdd <= " + strYMD + " and Notified = 0" ;
+                sqliteRes = sqlite3_exec( db , moveMail.c_str() , NULL , NULL , &err );
 
-            string total;
-            if ( newMailCount > 0 ){
-                string start        = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: ";
-                string strMailCount = "\\![set,trayballoon,--title=MailBox,--text=" + streamMailCount.str() + "件の未読メールがあります。]";
-                string end          = "\r\nScriptOption: nobreak,notranslate\r\n\r\n";
-                total               = start + strMailCount + end;
-            } else {
-                total = "PLUGIN/2.0 204 No Content\r\nCharset: UTF-8\r\n\r\n";
+                sqlite3_close( db );
+
+                if ( newMailCount > 0 ){
+                    NewMail = 1;
+                }
             }
-
-            int i               = strlen( total.c_str() );
-
-            char* res_buf;
-            res_buf = (char*)calloc( i + 1 , sizeof(char) );
-            memcpy( res_buf , total.c_str() , i );
-            resBuf = res_buf;
-
-            streamYMD.str("");
-            streamYMD.clear( stringstream::goodbit );
-            streamMailCount.str("");
-            streamMailCount.clear( stringstream::goodbit );
 
 
 
@@ -688,7 +675,49 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
 
 
-        } else if ( strcmp( ID , "OnOtherGhostTalk" ) == 0 ) {
+
+
+        //処理を考えるか、
+        //staticなstringを確保して、それが空じゃなかった場合は処理するか。
+
+
+        //通知内容をOnOtherGhostを悪用して追加する。
+        } else if ( strcmp( ID , "OnOtherGhostTalk" ) == 0 && NewMail != 0 ) {
+            NewMail = 0;
+
+            string start        = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: ";
+            string strMailCount = "\\C\\n\\n\\_q===========================\\_q\\w5\\c[line,1]\\n\\n\\_q=========================新\\_q\\w5\\c[line,1]\\n\\n\\_q========================新=\\_q\\w5\\c[line,1]\\n\\n\\_q=======================新着\\_q\\w5\\c[line,1]\\n\\n\\_q======================新着=\\_q\\w5\\c[line,1]\\n\\n\\_q=====================新着メ\\_q\\w5\\c[line,1]\\n\\n\\_q====================新着メ=\\_q\\w5\\c[line,1]\\n\\n\\_q===================新着メー\\_q\\w5\\c[line,1]\\n\\n\\_q==================新着メー=\\_q\\w5\\c[line,1]\\n\\n\\_q=================新着メール\\_q\\w5\\c[line,1]\\n\\n\\_q================新着メール=\\_q\\w5\\c[line,1]\\n\\n\\_q===============新着メール==\\_q\\w5\\c[line,1]\\n\\n\\_q==============新着メール===\\_q\\w5\\c[line,1]\\n\\n\\_q=============新着メール====\\_q\\w5\\c[line,1]\\n\\n\\_q============新着メール=====\\_q\\w5\\c[line,1]\\n\\n\\_q===========新着メール======\\_q\\w5\\c[line,1]\\n\\n\\_q==========新着メール=======\\_q\\w5\\c[line,1]\\n\\n\\_q=========新着メール========\\_q\\w5\\c[line,1]\\n\\n\\_q========新着メール=========\\_q\\w5\\c[line,1]\\n\\n\\_q=======新着メール==========\\_q\\w5\\c[line,1]\\n\\n\\_q======新着メール===========\\_q\\w5\\c[line,1]\\n\\n\\_q=====新着メール============\\_q\\w5\\c[line,1]\\n\\n\\_q====新着メール=============\\_q\\w5\\c[line,1]\\n\\n\\_q===新着メール==============\\_q\\w5\\c[line,1]\\n\\n\\_q==新着メール===============\\_q\\w5\\c[line,1]\\n\\n\\_q=新着メール================\\_q\\w5\\c[line,1]\\n\\n\\_q新着メール=================\\_q\\w5\\c[line,1]\\n\\n\\_q=着メール==================\\_q\\w5\\c[line,1]\\n\\n\\_q着メール===================\\_q\\w5\\c[line,1]\\n\\n\\_q=メール====================\\_q\\w5\\c[line,1]\\n\\n\\_qメール=====================\\_q\\w5\\c[line,1]\\n\\n\\_q=ール======================\\_q\\w5\\c[line,1]\\n\\n\\_qール=======================\\_q\\w5\\c[line,1]\\n\\n\\_q=ル========================\\_q\\w5\\c[line,1]\\n\\n\\_qル=========================\\_q\\w5\\c[line,1]\\n\\n\\_q===========================\\_q\\w5\\c[line,1]\\n\\n\\_q===========================\\_q\\w5\\c[line,1]\\n\\n\\_q=========================新\\_q\\w5\\c[line,1]\\n\\n\\_q========================新=\\_q\\w5\\c[line,1]\\n\\n\\_q=======================新着\\_q\\w5\\c[line,1]\\n\\n\\_q======================新着=\\_q\\w5\\c[line,1]\\n\\n\\_q=====================新着メ\\_q\\w5\\c[line,1]\\n\\n\\_q====================新着メ=\\_q\\w5\\c[line,1]\\n\\n\\_q===================新着メー\\_q\\w5\\c[line,1]\\n\\n\\_q==================新着メー=\\_q\\w5\\c[line,1]\\n\\n\\_q=================新着メール\\_q\\w5\\c[line,1]\\n\\n\\_q================新着メール=\\_q\\w5\\c[line,1]\\n\\n\\_q===============新着メール==\\_q\\w5\\c[line,1]\\n\\n\\_q==============新着メール===\\_q\\w5\\c[line,1]\\n\\n\\_q=============新着メール====\\_q\\w5\\c[line,1]\\n\\n\\_q============新着メール=====\\_q\\w5\\c[line,1]\\n\\n\\_q===========新着メール======\\_q\\w5\\c[line,1]\\n\\n\\_q==========新着メール=======\\_q\\w5\\c[line,1]\\n\\n\\_q=========新着メール========\\_q\\w5\\c[line,1]\\n\\n\\_q========新着メール=========\\_q\\w5\\c[line,1]\\n\\n\\_q=======新着メール==========\\_q\\w5\\c[line,1]\\n\\n\\_q======新着メール===========\\_q\\w5\\c[line,1]\\n\\n\\_q=====新着メール============\\_q\\w5\\c[line,1]\\n\\n\\_q====新着メール=============\\_q\\w5\\c[line,1]\\n\\n\\_q===新着メール==============\\_q\\w5\\c[line,1]\\n\\n\\_q==新着メール===============\\_q\\w5\\c[line,1]\\n\\n\\_q=新着メール================\\_q\\w5\\c[line,1]\\n\\n\\_q新着メール=================\\_q\\w5\\c[line,1]\\n\\n\\_q=着メール==================\\_q\\w5\\c[line,1]\\n\\n\\_q着メール===================\\_q\\w5\\c[line,1]\\n\\n\\_q=メール====================\\_q\\w5\\c[line,1]\\n\\n\\_qメール=====================\\_q\\w5\\c[line,1]\\n\\n\\_q=ール======================\\_q\\w5\\c[line,1]\\n\\n\\_qール=======================\\_q\\w5\\c[line,1]\\n\\n\\_q=ル========================\\_q\\w5\\c[line,1]\\n\\n\\_qル=========================\\_q\\w5\\c[line,1]\\n\\n\\_q===========================\\_q\\w5";
+            string end          = "\r\nScriptOption: nobreak,notranslate\r\n\r\n";
+            string total               = start + strMailCount + end;
+
+
+            int i = strlen( total.c_str() );
+            char* res_buf;
+            res_buf = (char*)calloc( i + 1 , sizeof(char) );
+            memcpy( res_buf , total.c_str() , i );
+            resBuf = res_buf;
+
+            //無限ループ回避
+            //if ( strcmp( Reference4 , "OnOtherGhostTalk" ) != 0 && strcmp( Reference2 , "plugin-script,notranslate" ) != 0 ) {
+            //}
+
+        } else if ( strcmp( ID , "OnGhostBoot" ) == 0 ) {
+#ifdef Debug
+            printf( "%s\n" , Reference0 );
+            printf( "%s\n" , Reference1 );
+            printf( "%s\n" , Reference2 );
+            printf( "%s\n" , Reference3 );
+            printf( "%s\n" , Reference4 );
+#endif
+        } else if ( strcmp( ID , "OnGhostExit" ) == 0 ) {
+#ifdef Debug
+            printf( "%s\n" , Reference0 );
+            printf( "%s\n" , Reference1 );
+            printf( "%s\n" , Reference2 );
+            printf( "%s\n" , Reference3 );
+            printf( "%s\n" , Reference4 );
+#endif
+
         //} else if ( strcmp( ID , "" ) == 0 ) {
         }
     }

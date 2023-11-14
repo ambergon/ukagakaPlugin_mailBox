@@ -9,8 +9,10 @@ filename,main.dll
 id,cfagffgf-ffdc-ccff-faca-gafg0cfaaagf
 
 //メールチェック
-secondchangeinterval,10
-otherghosttalk,before
+secondchangeinterval,60
+
+//afterを使うことで、喋り終わった後に通知する
+otherghosttalk,after
 
 //更新url
 homeurl,https://raw.githubusercontent.com/ambergon/ukagakaPlugin_mailBox/version
