@@ -406,7 +406,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
         //回転数はこっちで制限を用意して決める。
         //一時間に一回程度で大丈夫だけど、
         //起動時にほしい。
-        } else if ( strcmp( ID , "OnSecondChange" ) == 0 || strcmp( ID , "OnCheckNewMail" ) == 0 ) {
+        } else if ( strcmp( ID , "OnSecondChange" ) == 0 ) {
             SecChange++;
             //一分毎に実行
             //一時間ごとにチェック。初回は起動時。
@@ -672,14 +672,6 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
                 resBuf = res_buf;
             }
-
-
-
-
-
-        //処理を考えるか、
-        //staticなstringを確保して、それが空じゃなかった場合は処理するか。
-
 
         //通知内容をOnOtherGhostを悪用して追加する。
         } else if ( strcmp( ID , "OnOtherGhostTalk" ) == 0 && NewMail != 0 ) {

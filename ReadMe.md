@@ -16,8 +16,13 @@
 
 - メールの送信
 - メールの削除
-- メールの状態確認
-- 未読メールの数の確認
+- 送信済みのすべてのメールIDの取得
+- 単一のメールの状態確認
+- 複数のメールの状態確認
+
+
+#### 廃止
+- 未通知メールの確認: OnCheckNewMail
 
 
 #### 注意事項
@@ -65,7 +70,21 @@
 ```
 
 
-#### メールの状態チェック
+#### ゴーストが送信済みのすべてのメールIDの取得
+呼び出し
+```
+"\![raiseplugin,MailBox,OnGetAllMailID]"
+```
+受け取り
+```
+//ID:ID:ID...で取得
+OnAllMailID {
+    reference[0]
+}
+```
+
+
+#### 単一のメールの状態チェック
 指定したメールIDのステータスを確認することができます。
 これを実行すると`OnMailStatus`関数がゴーストに呼ばれます。
 
@@ -119,13 +138,23 @@ OnMailStatus {
 ```
 
 
-#### 未読メールの数を確認
-起動時の未読通知と同じものを現在の未読メール数で再発行します。
-新着リストではない点に注意してください。
-必要な方向け。
+#### 複数のメールの状態確認
+呼び出し
 ```
-    "\![raiseplugin,MailBox,OnCheckNewMail]"
+//OnStatusMail[s]
+"\![raiseplugin,MailBox,OnStatusMails,0:1:2:3:4:5]"
 ```
+受け取り
+```
+//OnMail[s]Status
+OnMailsStatus {
+    _text = "mailIDs : " + reference[0] + "\n" + "status : " + reference[1]
+    _text
+}
+```
+
+
+
 
 
 ## Other
