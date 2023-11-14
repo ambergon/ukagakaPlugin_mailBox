@@ -29,7 +29,6 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-static int NewMail   = 0;
 static int SecChange = 60;
 
 //#define Debug
@@ -435,7 +434,25 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 sqlite3_close( db );
 
                 if ( newMailCount > 0 ){
-                    NewMail = 1;
+                    stringstream x;
+                    x << newMailCount ;
+
+                    string start        = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: ";
+                    string strMailCount = "\\C\\![set,trayballoon,--title=MailBox,--text=" + x.str() + "件の新着メールがあります。,--icon=none]";
+                    string end          = "\r\nScriptOption: nobreak,notranslate\r\n\r\n";
+                    string total        = start + strMailCount + end;
+                    x.str("");
+                    x.clear( stringstream::goodbit );
+
+
+                    int i = strlen( total.c_str() );
+                    char* res_buf;
+                    res_buf = (char*)calloc( i + 1 , sizeof(char) );
+                    memcpy( res_buf , total.c_str() , i );
+                    resBuf = res_buf;
+
+
+
                 }
             }
 
@@ -554,6 +571,11 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                     printf( "Select%s\n" , err );
                 }
 #endif
+                //未読ディレクトリなら通知済みに変更
+                if ( strChecked == "0" ){
+                    string moveMail = "update mailBox2 set Notified = 1 where YYYYmmdd <= " + strYMD + " and Notified = 0" ;
+                    sqliteRes = sqlite3_exec( db , moveMail.c_str() , NULL , NULL , &err );
+                }
                 sqlite3_close( db );
 
                 string start        = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\0\\b[2]\\_q";
@@ -673,25 +695,24 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 resBuf = res_buf;
             }
 
-        //通知内容をOnOtherGhostを悪用して追加する。
-        } else if ( strcmp( ID , "OnOtherGhostTalk" ) == 0 && NewMail != 0 ) {
-            NewMail = 0;
+        ////通知内容をOnOtherGhostを悪用して追加する。
+        //} else if ( strcmp( ID , "OnOtherGhostTalk" ) == 0 && NewMail != 0 ) {
+        //    NewMail = 0;
 
-            string start        = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: ";
-            string strMailCount = "\\C\\n\\n\\_q===========================\\_q\\w5\\c[line,1]\\n\\n\\_q=========================新\\_q\\w5\\c[line,1]\\n\\n\\_q========================新=\\_q\\w5\\c[line,1]\\n\\n\\_q=======================新着\\_q\\w5\\c[line,1]\\n\\n\\_q======================新着=\\_q\\w5\\c[line,1]\\n\\n\\_q=====================新着メ\\_q\\w5\\c[line,1]\\n\\n\\_q====================新着メ=\\_q\\w5\\c[line,1]\\n\\n\\_q===================新着メー\\_q\\w5\\c[line,1]\\n\\n\\_q==================新着メー=\\_q\\w5\\c[line,1]\\n\\n\\_q=================新着メール\\_q\\w5\\c[line,1]\\n\\n\\_q================新着メール=\\_q\\w5\\c[line,1]\\n\\n\\_q===============新着メール==\\_q\\w5\\c[line,1]\\n\\n\\_q==============新着メール===\\_q\\w5\\c[line,1]\\n\\n\\_q=============新着メール====\\_q\\w5\\c[line,1]\\n\\n\\_q============新着メール=====\\_q\\w5\\c[line,1]\\n\\n\\_q===========新着メール======\\_q\\w5\\c[line,1]\\n\\n\\_q==========新着メール=======\\_q\\w5\\c[line,1]\\n\\n\\_q=========新着メール========\\_q\\w5\\c[line,1]\\n\\n\\_q========新着メール=========\\_q\\w5\\c[line,1]\\n\\n\\_q=======新着メール==========\\_q\\w5\\c[line,1]\\n\\n\\_q======新着メール===========\\_q\\w5\\c[line,1]\\n\\n\\_q=====新着メール============\\_q\\w5\\c[line,1]\\n\\n\\_q====新着メール=============\\_q\\w5\\c[line,1]\\n\\n\\_q===新着メール==============\\_q\\w5\\c[line,1]\\n\\n\\_q==新着メール===============\\_q\\w5\\c[line,1]\\n\\n\\_q=新着メール================\\_q\\w5\\c[line,1]\\n\\n\\_q新着メール=================\\_q\\w5\\c[line,1]\\n\\n\\_q=着メール==================\\_q\\w5\\c[line,1]\\n\\n\\_q着メール===================\\_q\\w5\\c[line,1]\\n\\n\\_q=メール====================\\_q\\w5\\c[line,1]\\n\\n\\_qメール=====================\\_q\\w5\\c[line,1]\\n\\n\\_q=ール======================\\_q\\w5\\c[line,1]\\n\\n\\_qール=======================\\_q\\w5\\c[line,1]\\n\\n\\_q=ル========================\\_q\\w5\\c[line,1]\\n\\n\\_qル=========================\\_q\\w5\\c[line,1]\\n\\n\\_q===========================\\_q\\w5\\c[line,1]\\n\\n\\_q===========================\\_q\\w5\\c[line,1]\\n\\n\\_q=========================新\\_q\\w5\\c[line,1]\\n\\n\\_q========================新=\\_q\\w5\\c[line,1]\\n\\n\\_q=======================新着\\_q\\w5\\c[line,1]\\n\\n\\_q======================新着=\\_q\\w5\\c[line,1]\\n\\n\\_q=====================新着メ\\_q\\w5\\c[line,1]\\n\\n\\_q====================新着メ=\\_q\\w5\\c[line,1]\\n\\n\\_q===================新着メー\\_q\\w5\\c[line,1]\\n\\n\\_q==================新着メー=\\_q\\w5\\c[line,1]\\n\\n\\_q=================新着メール\\_q\\w5\\c[line,1]\\n\\n\\_q================新着メール=\\_q\\w5\\c[line,1]\\n\\n\\_q===============新着メール==\\_q\\w5\\c[line,1]\\n\\n\\_q==============新着メール===\\_q\\w5\\c[line,1]\\n\\n\\_q=============新着メール====\\_q\\w5\\c[line,1]\\n\\n\\_q============新着メール=====\\_q\\w5\\c[line,1]\\n\\n\\_q===========新着メール======\\_q\\w5\\c[line,1]\\n\\n\\_q==========新着メール=======\\_q\\w5\\c[line,1]\\n\\n\\_q=========新着メール========\\_q\\w5\\c[line,1]\\n\\n\\_q========新着メール=========\\_q\\w5\\c[line,1]\\n\\n\\_q=======新着メール==========\\_q\\w5\\c[line,1]\\n\\n\\_q======新着メール===========\\_q\\w5\\c[line,1]\\n\\n\\_q=====新着メール============\\_q\\w5\\c[line,1]\\n\\n\\_q====新着メール=============\\_q\\w5\\c[line,1]\\n\\n\\_q===新着メール==============\\_q\\w5\\c[line,1]\\n\\n\\_q==新着メール===============\\_q\\w5\\c[line,1]\\n\\n\\_q=新着メール================\\_q\\w5\\c[line,1]\\n\\n\\_q新着メール=================\\_q\\w5\\c[line,1]\\n\\n\\_q=着メール==================\\_q\\w5\\c[line,1]\\n\\n\\_q着メール===================\\_q\\w5\\c[line,1]\\n\\n\\_q=メール====================\\_q\\w5\\c[line,1]\\n\\n\\_qメール=====================\\_q\\w5\\c[line,1]\\n\\n\\_q=ール======================\\_q\\w5\\c[line,1]\\n\\n\\_qール=======================\\_q\\w5\\c[line,1]\\n\\n\\_q=ル========================\\_q\\w5\\c[line,1]\\n\\n\\_qル=========================\\_q\\w5\\c[line,1]\\n\\n\\_q===========================\\_q\\w5";
-            string end          = "\r\nScriptOption: nobreak,notranslate\r\n\r\n";
-            string total               = start + strMailCount + end;
+        //    string start        = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: ";
+        //    string end          = "\r\nScriptOption: nobreak,notranslate\r\n\r\n";
+        //    string total               = start + strMailCount + end;
 
 
-            int i = strlen( total.c_str() );
-            char* res_buf;
-            res_buf = (char*)calloc( i + 1 , sizeof(char) );
-            memcpy( res_buf , total.c_str() , i );
-            resBuf = res_buf;
+        //    int i = strlen( total.c_str() );
+        //    char* res_buf;
+        //    res_buf = (char*)calloc( i + 1 , sizeof(char) );
+        //    memcpy( res_buf , total.c_str() , i );
+        //    resBuf = res_buf;
 
-            //無限ループ回避
-            //if ( strcmp( Reference4 , "OnOtherGhostTalk" ) != 0 && strcmp( Reference2 , "plugin-script,notranslate" ) != 0 ) {
-            //}
+        //    //無限ループ回避
+        //    //if ( strcmp( Reference4 , "OnOtherGhostTalk" ) != 0 && strcmp( Reference2 , "plugin-script,notranslate" ) != 0 ) {
+        //    //}
 
         } else if ( strcmp( ID , "OnGhostBoot" ) == 0 ) {
 #ifdef Debug
