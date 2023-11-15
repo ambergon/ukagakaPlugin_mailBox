@@ -481,8 +481,44 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 stringstream streamMailStatus; 
                 streamMailStatus << mailStatus;
                 string strMailStatus;
-                string Rzero = Reference0;
-                strMailStatus = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nEvent: OnMailStatus\r\nReference0: " + Rzero + "\r\nReference1: " + streamMailStatus.str() + "\r\n\r\n";
+                string R0 = Reference0;
+                strMailStatus = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nEvent: OnMailStatus\r\nReference0: " + R0 + "\r\nReference1: " + streamMailStatus.str() + "\r\n\r\n";
+                streamMailStatus.str("");
+                streamMailStatus.clear( stringstream::goodbit );
+
+
+                int i = strlen( strMailStatus.c_str() );
+                char* res_buf;
+                res_buf = (char*)calloc( i + 1 , sizeof(char) );
+                memcpy( res_buf , strMailStatus.c_str() , i );
+
+                resBuf = res_buf;
+            }
+
+        //メールの状態を確認する機能
+        //第0引数 メールID
+        //第1-5引数 横流し
+        } else if ( strcmp( ID , "OnStatusMailEX" ) == 0 ) {
+            if ( Reference0 != NULL && Reference1 != NULL  && Reference2 != NULL && Reference3 != NULL && Reference4 != NULL && Reference5 != NULL){
+                
+                string strR2 = Reference1; 
+                string strR3 = Reference2;
+                string strR4 = Reference3;
+                string strR5 = Reference4;
+                string strR6 = Reference5;
+
+                strR2 = "Reference2: " + strR2 + "\r\n"; 
+                strR3 = "Reference3: " + strR3 + "\r\n";
+                strR4 = "Reference4: " + strR4 + "\r\n";
+                strR5 = "Reference5: " + strR5 + "\r\n";
+                strR6 = "Reference6: " + strR6 + "\r\n";
+
+                int mailStatus = StatusMail( Sender , Reference0 );
+                stringstream streamMailStatus; 
+                streamMailStatus << mailStatus;
+                string strMailStatus;
+                string R0 = Reference0;
+                strMailStatus = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nEvent: OnMailStatusEX\r\nReference0: " + R0 + "\r\nReference1: " + streamMailStatus.str() + "\r\n" + strR2 + strR3 + strR4 +strR5 + strR6 + "\r\n";
                 streamMailStatus.str("");
                 streamMailStatus.clear( stringstream::goodbit );
 
@@ -504,7 +540,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
         } else if ( strcmp( ID , "OnStatusMails" ) == 0 ) {
             if ( Reference0 != NULL ){
 
-                string Rzero = Reference0;
+                string R0 = Reference0;
 
                 char* MailID ;
                 char  statusMailsSep[]    = ":";
@@ -522,7 +558,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 
                 if ( mailsStatus != "" ){
                     string strMailsStatus;
-                    strMailsStatus = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nEvent: OnMailsStatus\r\nReference0: " + Rzero + "\r\nReference1: " + mailsStatus + "\r\n\r\n";
+                    strMailsStatus = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nEvent: OnMailsStatus\r\nReference0: " + R0 + "\r\nReference1: " + mailsStatus + "\r\n\r\n";
                     int i = strlen( strMailsStatus.c_str() );
                     char* res_buf;
                     res_buf = (char*)calloc( i + 1 , sizeof(char) );
