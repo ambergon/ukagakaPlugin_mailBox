@@ -2,6 +2,10 @@
 このプラグインは、ゴーストがより人間らしいコミュニケーションをとれるようにするために開発されました。
 
 
+## このプラグインは2023/12/25に正式公開を予定しています。
+ゴーストの組み込みはまだお控えください。
+
+
 ## 一般ユーザの使用
 #### 起動時のメール確認
 起動時に未読メールのチェックを行います。
@@ -135,6 +139,21 @@ OnMailStatus {
         //"メールを送り忘れた"
         //もしくは既に削除した。
     }
+}
+```
+
+
+#### 単一のメールの状態チェックEX
+OnStatusMailと同等だが、引数を5つ横流しすることができる。
+呼び出し
+```
+"\![raiseplugin,MailBox,OnStatusMailEX,0,A,B,C,D,E]"
+```
+受け取り
+```
+OnMailStatusEX {
+    _text = "mailID : " + reference[0] + "\n" + "status : " + reference[1] + "\nR2 : " + reference[2] + "\nR3 : " + reference[3] + "\nR4 : " + reference[4] + "\nR5 : " + reference[5] + "\nR6 : " + reference[6]
+    _text
 }
 ```
 
