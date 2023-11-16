@@ -497,28 +497,39 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
         //メールの状態を確認する機能
         //第0引数 メールID
-        //第1-5引数 横流し
+        //
+        //返り値0-4:横流し
+        //返り値5  :メールID
+        //返り値6  :その結果
+        //返り値7  :横流し
         } else if ( strcmp( ID , "OnStatusMailEX" ) == 0 ) {
-            if ( Reference0 != NULL && Reference1 != NULL  && Reference2 != NULL && Reference3 != NULL && Reference4 != NULL && Reference5 != NULL){
+            if ( Reference0 != NULL && Reference1 != NULL  && Reference2 != NULL && Reference3 != NULL && Reference4 != NULL && Reference5 != NULL && Reference6 != NULL ){
                 
-                string strR2 = Reference1; 
-                string strR3 = Reference2;
-                string strR4 = Reference3;
-                string strR5 = Reference4;
-                string strR6 = Reference5;
+                //nullcheck
+                string strR0 = Reference0; 
+                string strR1 = Reference1;
+                string strR2 = Reference2;
+                string strR3 = Reference3;
+                string strR4 = Reference4;
+                string strR7 = Reference6;
 
-                strR2 = "Reference2: " + strR2 + "\r\n"; 
+                //mailID
+                string strR5 = Reference0;
+
+                strR0 = "Reference0: " + strR0 + "\r\n"; 
+                strR1 = "Reference1: " + strR1 + "\r\n";
+                strR2 = "Reference2: " + strR2 + "\r\n";
                 strR3 = "Reference3: " + strR3 + "\r\n";
                 strR4 = "Reference4: " + strR4 + "\r\n";
                 strR5 = "Reference5: " + strR5 + "\r\n";
-                strR6 = "Reference6: " + strR6 + "\r\n";
 
-                int mailStatus = StatusMail( Sender , Reference0 );
+                strR7 = "Reference7: " + strR7 + "\r\n";
+
+                int mailStatus = StatusMail( Sender , Reference5 );
                 stringstream streamMailStatus; 
                 streamMailStatus << mailStatus;
                 string strMailStatus;
-                string R0 = Reference0;
-                strMailStatus = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nEvent: OnMailStatusEX\r\nReference0: " + R0 + "\r\nReference1: " + streamMailStatus.str() + "\r\n" + strR2 + strR3 + strR4 +strR5 + strR6 + "\r\n";
+                strMailStatus = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nEvent: OnMailStatusEX\r\n" + strR0 + strR1 + strR2 + strR3 + strR4 + strR5 + "Reference6: " + streamMailStatus.str() + "\r\n" + strR7 + "\r\n";
                 streamMailStatus.str("");
                 streamMailStatus.clear( stringstream::goodbit );
 
