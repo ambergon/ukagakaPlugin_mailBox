@@ -150,7 +150,7 @@ OnStatusMailと同等だが、引数を5つ横流しすることができる。
 呼び出し
 ```
 //"\![raiseplugin,MailBox,OnStatusMailEX, 横流し0, 横流し1, 横流し2, 横流し3, 横流し4, メールID , 横流し5]
-"\![raiseplugin,MailBox,OnStatusMailEX,0,A,B,C,D,E]"
+"\![raiseplugin,MailBox,OnStatusMailEX,A,B,C,D,E,メールID,F]"
 ```
 受け取り
 ```
@@ -162,6 +162,7 @@ OnStatusMailと同等だが、引数を5つ横流しすることができる。
 //Reference 5: メールID 
 //Reference 6: メールステータス
 //Reference 7: 横流し5 
+//Reference 8: 横流し6 
 
 OnMailStatusEX {
     _text = "mailID : " + reference[0] + "\n" + "status : " + reference[1] + "\nR2 : " + reference[2] + "\nR3 : " + reference[3] + "\nR4 : " + reference[4] + "\nR5 : " + reference[5] + "\nR6 : " + reference[6]
