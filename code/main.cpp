@@ -520,7 +520,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 if ( Reference6 != NULL ){ strR7 = Reference6; } 
 
                 //mailID
-                string strR5 = Reference0;
+                string strR5 = Reference5;
 
                 strR0 = "Reference0: " + strR0 + "\r\n"; 
                 strR1 = "Reference1: " + strR1 + "\r\n";
