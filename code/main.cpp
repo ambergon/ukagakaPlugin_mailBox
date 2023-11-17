@@ -151,6 +151,7 @@ void SendMail( char* GhostMenuName , char* MailID , char* YYYY , char* MM , char
 
     string strGhostMenuName  = GhostMenuName;
     strGhostMenuName         = regex_replace( GhostMenuName , regex( "'" ) ,"" );
+    strGhostMenuName         = regex_replace( strGhostMenuName , regex( "vanishbymyself" ) ,"危険な文字" );
 
     string strMailID         = MailID       ;
 
@@ -175,13 +176,13 @@ void SendMail( char* GhostMenuName , char* MailID , char* YYYY , char* MM , char
 
     string strSender        = Sender       ;
     strSender               = regex_replace( strSender , regex( "'" ) ,"" );
-    strSender               = regex_replace( strSender , regex( "vanish" ) ,"危険な文字" );
+    strSender               = regex_replace( strSender , regex( "vanishbymyself" ) ,"危険な文字" );
     string strTitle         = Title        ;
     strTitle                = regex_replace( strTitle , regex( "'" ) ,"" );
-    strTitle                = regex_replace( strTitle , regex( "vanish" ) ,"危険な文字" );
+    strTitle                = regex_replace( strTitle , regex( "vanishbymyself" ) ,"危険な文字" );
     string strMailText      = MailText     ;
     strMailText             = regex_replace( strMailText , regex( "'" ) ,"" );
-    strMailText             = regex_replace( strMailText , regex( "vanish" ) ,"危険な文字" );
+    strMailText             = regex_replace( strMailText , regex( "vanishbymyself" ) ,"危険な文字" );
 
 
 
@@ -223,6 +224,7 @@ void DeleteMail( char* GhostMenuName , char* MailID ){
 
     string strGhostMenuName  = GhostMenuName;
     strGhostMenuName         = regex_replace( GhostMenuName , regex( "'" ) ,"" );
+    strGhostMenuName         = regex_replace( strGhostMenuName , regex( "vanishbymyself" ) ,"危険な文字" );
 
     string strMailID         = MailID       ;
 
@@ -250,6 +252,7 @@ int StatusMail( char* GhostMenuName , char* MailID ){
 
     string strGhostMenuName  = GhostMenuName;
     strGhostMenuName         = regex_replace( GhostMenuName , regex( "'" ) ,"" );
+    strGhostMenuName         = regex_replace( strGhostMenuName , regex( "vanishbymyself" ) ,"危険な文字" );
 
     string strMailID         = MailID       ;
 
@@ -670,9 +673,9 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
         //|               |        |          |        |       |          |         |
         //| GhostMenuName | MailID | YYYYmmdd | Sender | Title | MailText | Checked |
         //|               |        |          |        |       |          |         |
-        //第1引数 : ゴースト名
-        //第2引数 : メールID
-        //第3引数 : それらのオフセット
+        //第0引数 : ゴースト名
+        //第1引数 : メールID
+        //第2引数 : それらのオフセット
         //既読リストに限りオフセットが欲しい。
         } else if ( strcmp( ID , "OnOpenMail" ) == 0 ) {
             if ( Reference0 != NULL && Reference1 != NULL && Reference2 != NULL ){
@@ -723,6 +726,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
             char* err = NULL;
             string strGhostMenuName  = Sender;
             strGhostMenuName         = regex_replace( strGhostMenuName , regex( "'" ) ,"" );
+            strGhostMenuName         = regex_replace( strGhostMenuName , regex( "vanishbymyself" ) ,"危険な文字" );
 
             sqlite3_open16( dbPATH , &db );
             string sqlSelect = "select * from mailBox2 where GhostMenuName ='" + strGhostMenuName + "' order by MailID asc";
