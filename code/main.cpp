@@ -31,8 +31,8 @@ int main(int argc, char* argv[]) {
 
 static int SecChange = 60;
 
-//#define Debug
 
+//#define Debug
 
 
 //hにはdllまでのLogFilePathが入っている。
@@ -496,22 +496,28 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
             }
 
         //メールの状態を確認する機能
-        //第0引数 メールID
+        //第5引数 メールID
         //
         //返り値0-4:横流し
         //返り値5  :メールID
         //返り値6  :その結果
         //返り値7  :横流し
         } else if ( strcmp( ID , "OnStatusMailEX" ) == 0 ) {
-            if ( Reference0 != NULL && Reference1 != NULL  && Reference2 != NULL && Reference3 != NULL && Reference4 != NULL && Reference5 != NULL && Reference6 != NULL ){
-                
-                //nullcheck
-                string strR0 = Reference0; 
-                string strR1 = Reference1;
-                string strR2 = Reference2;
-                string strR3 = Reference3;
-                string strR4 = Reference4;
-                string strR7 = Reference6;
+            if ( Reference5 != NULL ){
+
+                string strR0 = ""; 
+                string strR1 = ""; 
+                string strR2 = ""; 
+                string strR3 = ""; 
+                string strR4 = ""; 
+                string strR7 = ""; 
+
+                if ( Reference0 != NULL ){ strR0 = Reference0; } 
+                if ( Reference1 != NULL ){ strR1 = Reference1; } 
+                if ( Reference2 != NULL ){ strR2 = Reference2; } 
+                if ( Reference3 != NULL ){ strR3 = Reference3; } 
+                if ( Reference4 != NULL ){ strR4 = Reference4; } 
+                if ( Reference7 != NULL ){ strR7 = Reference6; } 
 
                 //mailID
                 string strR5 = Reference0;
@@ -540,7 +546,10 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 memcpy( res_buf , strMailStatus.c_str() , i );
 
                 resBuf = res_buf;
+            } else {
+                printf( "NULL error \n" );
             }
+
 
 
         //引数-区切りで

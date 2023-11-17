@@ -12,7 +12,8 @@ id,cfagffgf-ffdc-ccff-faca-gafg0cfaaagf
 secondchangeinterval,60
 
 //afterを使うことで、喋り終わった後に通知する
-otherghosttalk,after
+//otherghosttalk,after
+otherghosttalk,0
 
 //更新url
 homeurl,https://raw.githubusercontent.com/ambergon/ukagakaPlugin_mailBox/version
