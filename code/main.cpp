@@ -517,7 +517,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 if ( Reference2 != NULL ){ strR2 = Reference2; } 
                 if ( Reference3 != NULL ){ strR3 = Reference3; } 
                 if ( Reference4 != NULL ){ strR4 = Reference4; } 
-                if ( Reference7 != NULL ){ strR7 = Reference6; } 
+                if ( Reference6 != NULL ){ strR7 = Reference6; } 
 
                 //mailID
                 string strR5 = Reference0;
