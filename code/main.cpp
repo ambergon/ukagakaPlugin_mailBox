@@ -546,8 +546,6 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 memcpy( res_buf , strMailStatus.c_str() , i );
 
                 resBuf = res_buf;
-            } else {
-                printf( "NULL error \n" );
             }
 
 
