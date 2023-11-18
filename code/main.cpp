@@ -98,6 +98,12 @@ extern "C" __declspec(dllexport) bool __cdecl unload(void){
 }
 
 
+string Sanitize( string sanitize ){
+    sanitize = regex_replace( sanitize , regex( "'" ) ,"" );
+    sanitize = regex_replace( sanitize , regex( "vanishbymyself" ) ,"危険な文字" );
+    return sanitize;
+}
+
 //Notified
 
 //| 旧mailBox     |        |          |        |       |          |         | 
@@ -150,8 +156,7 @@ void SendMail( char* GhostMenuName , char* MailID , char* YYYY , char* MM , char
     char* err = NULL;
 
     string strGhostMenuName  = GhostMenuName;
-    strGhostMenuName         = regex_replace( GhostMenuName , regex( "'" ) ,"" );
-    strGhostMenuName         = regex_replace( strGhostMenuName , regex( "vanishbymyself" ) ,"危険な文字" );
+    strGhostMenuName  = Sanitize( strGhostMenuName );
 
     string strMailID         = MailID       ;
 
@@ -175,15 +180,13 @@ void SendMail( char* GhostMenuName , char* MailID , char* YYYY , char* MM , char
     if( strCheck != "" ){ return; }
 
     string strSender        = Sender       ;
-    strSender               = regex_replace( strSender , regex( "'" ) ,"" );
-    strSender               = regex_replace( strSender , regex( "vanishbymyself" ) ,"危険な文字" );
-    string strTitle         = Title        ;
-    strTitle                = regex_replace( strTitle , regex( "'" ) ,"" );
-    strTitle                = regex_replace( strTitle , regex( "vanishbymyself" ) ,"危険な文字" );
-    string strMailText      = MailText     ;
-    strMailText             = regex_replace( strMailText , regex( "'" ) ,"" );
-    strMailText             = regex_replace( strMailText , regex( "vanishbymyself" ) ,"危険な文字" );
+    strSender               = Sanitize( Sender );
 
+    string strTitle         = Title        ;
+    strTitle                = Sanitize( strTitle );
+
+    string strMailText      = MailText     ;
+    strMailText             = Sanitize( strMailText );
 
 
 
@@ -223,8 +226,7 @@ void DeleteMail( char* GhostMenuName , char* MailID ){
     char* err = NULL;
 
     string strGhostMenuName  = GhostMenuName;
-    strGhostMenuName         = regex_replace( GhostMenuName , regex( "'" ) ,"" );
-    strGhostMenuName         = regex_replace( strGhostMenuName , regex( "vanishbymyself" ) ,"危険な文字" );
+    strGhostMenuName         = Sanitize( strGhostMenuName );
 
     string strMailID         = MailID       ;
 
@@ -251,8 +253,7 @@ int StatusMail( char* GhostMenuName , char* MailID ){
     char* err = NULL;
 
     string strGhostMenuName  = GhostMenuName;
-    strGhostMenuName         = regex_replace( GhostMenuName , regex( "'" ) ,"" );
-    strGhostMenuName         = regex_replace( strGhostMenuName , regex( "vanishbymyself" ) ,"危険な文字" );
+    strGhostMenuName         = Sanitize( strGhostMenuName );
 
     string strMailID         = MailID       ;
 
@@ -725,8 +726,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
         } else if ( strcmp( ID , "OnGetAllMailID" ) == 0 ) {
             char* err = NULL;
             string strGhostMenuName  = Sender;
-            strGhostMenuName         = regex_replace( strGhostMenuName , regex( "'" ) ,"" );
-            strGhostMenuName         = regex_replace( strGhostMenuName , regex( "vanishbymyself" ) ,"危険な文字" );
+            strGhostMenuName         = Sanitize( strGhostMenuName );
 
             sqlite3_open16( dbPATH , &db );
             string sqlSelect = "select * from mailBox2 where GhostMenuName ='" + strGhostMenuName + "' order by MailID asc";
