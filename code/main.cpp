@@ -114,7 +114,13 @@ string Sanitize( string sanitize ){
 //|               |        |          |      |        |       |          |         |
 //anything = offset
 int callbackMailList(void *anything, int keyCount, char **value, char **key){
-    s << "├┼\\q[" << value[4] << " : " << value[5] << ",OnOpenMail," << value[0] << "," << value[1] << "," << *(int*)anything << "]\\n";
+    string Checked = value[7];
+    //未読ならわかりやすく
+    if ( Checked == "0" ){
+        s << "├┼─\\q[" << value[4] << " : " << value[5] << ",OnOpenMail," << value[0] << "," << value[1] << "," << *(int*)anything << "]\\n";
+    } else {
+        s << "├┼\\q[" << value[4] << " : " << value[5] << ",OnOpenMail," << value[0] << "," << value[1] << "," << *(int*)anything << "]\\n";
+    }
     return 0;
 }
 int callbackOpenMail(void *anything, int keyCount, char **value, char **key){
@@ -596,16 +602,22 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
         //┌ └ ┐ ┘ ├ ┤ ─ ┬ ┼ ┴
         //\\_a[OnCheckMail,0,0] ───未読メール─── \\_a
         //\\_a[OnCheckMail,1,0] ───既読メール─── \\_a┼
+        //\\_a[OnCheckMail,2,0] ───選択メール─── \\_a┼
         } else if ( strcmp( ID , "OnMenuExec" ) == 0 ) {
-            char res_buf[] = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\_q┌┬────────────┬┐ \\n├┼────────────┼┤ \\n├┼ \\q[───未読メール───,OnCheckMail,0,0] ┼┤ \\n├┼────────────┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[───既読メール───,OnCheckMail,1,0] ┼┤ \\n├┼────────────┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[────閉じる────,] ┼┤ \\n├┼────────────┼┤ \\n└┴────────────┴┘ \\_q \r\nScriptOption: nobreak,notranslate\r\n\r\n";
+            char res_buf[] = 
+                "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\_q┌┬────────────┬┐ \\n├┼────────────┼┤ \\n├┼ \\q[───未読メール───,OnCheckMail,0,0] ┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[───既読メール───,OnCheckMail,1,0] ┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[───個別メール───,OnCheckMail,2,0] ┼┤ \\n├┼────────────┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[────閉じる────,] ┼┤ \\n└┴────────────┴┘ \\_q \r\nScriptOption: nobreak,notranslate\r\n\r\n";
             //char res_buf[] = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\_q\\_a[OnCheckMail,0,0]未読メール\\_a\\n\\_a[OnCheckMail,1,0]既読メール\\_a\\_q\r\nScriptOption: nobreak,notranslate\r\n\r\n";
             resBuf = res_buf;
 
 
-        //第0引数 未読 = 0 , 既読 = 1
+        //第0引数 未読 = 0 , 既読 = 1 , そのゴーストのメール = 2
         //第1引数 offset
         } else if ( strcmp( ID , "OnCheckMail" ) == 0 ) {
             if ( Reference0 != NULL && Reference1 != NULL ) {
+
+                string GhostMenuName = Sender;
+                GhostMenuName = Sanitize( GhostMenuName );
+
                 string strID        = ID;
                 string strChecked   = Reference0 ;
                 string strOffset    = Reference1 ;
@@ -622,8 +634,17 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
                 char* err = NULL;
                 sqlite3_open16( dbPATH , &db );
-                string mailList = "select * from mailBox2 where YYYYmmdd <= " + strYMD + " and Checked = " + strChecked + " order by YYYYmmdd desc,MailID desc limit 20 offset " + strOffset ;
-                //string mailList = "select * from mailBox2 where YYYYmmdd <= " + strYMD + " and Checked = " + strChecked + " order by YYYYmmdd desc limit 20 offset " + strOffset ;
+
+                //ghost個別確認
+                string mailList ;
+                if ( strChecked == "2" ){
+                    mailList = "select * from mailBox2 where GhostMenuName =='" + GhostMenuName + "' and YYYYmmdd <= " + strYMD + " order by YYYYmmdd desc,MailID desc limit 20 offset " + strOffset ;
+
+                //未読 or 既読
+                } else {
+                    mailList = "select * from mailBox2 where YYYYmmdd <= " + strYMD + " and Checked = " + strChecked + " order by YYYYmmdd desc,MailID desc limit 20 offset " + strOffset ;
+                }
+                //string mailList = "select * from mailBox2 where YYYYmmdd <= " + strYMD + " and Checked = " + strChecked + " order by YYYYmmdd desc,MailID desc limit 20 offset " + strOffset ;
                 int sqliteRes = sqlite3_exec( db , mailList.c_str() , callbackMailList , (void*)&offset , &err );
 #ifdef Debug
                 if ( sqliteRes != 0 ){
@@ -634,7 +655,13 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 if ( strChecked == "0" ){
                     string moveMail = "update mailBox2 set Notified = 1 where YYYYmmdd <= " + strYMD + " and Notified = 0" ;
                     sqliteRes = sqlite3_exec( db , moveMail.c_str() , NULL , NULL , &err );
+
+                //個別ディレクトリならそのゴーストの未通知を通知に。
+                } else if ( strChecked == "2" ){
+                    string moveMail = "update mailBox2 set Notified = 1 where GhostMenuName =='" + GhostMenuName + "' and YYYYmmdd <= " + strYMD + " and Notified = 0" ;
+                    sqliteRes = sqlite3_exec( db , moveMail.c_str() , NULL , NULL , &err );
                 }
+
                 sqlite3_close( db );
 
                 string start        = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\0\\b[2]\\_q";
@@ -646,9 +673,9 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 }
                 string exitSelect;
                 if( strChecked == "0" ){
-                    exitSelect = "┌┬\\q[─────閉じる──────,]┬┐\\n└┴\\q[────既読メール─────,OnCheckMail,1,0]┴┘\\n\\n";
+                    exitSelect = "┌┬\\q[─────閉じる──────,]┬┐\\n├┼\\q[────既読メール─────,OnCheckMail,1,0]┼┤\\n└┴\\q[────個別メール─────,OnCheckMail,2,0]┴┘\\n\\n";
                 } else {
-                    exitSelect = "┌┬\\q[─────閉じる──────,]┬┐\\n└┴\\q[────未読メール─────,OnCheckMail,0,0]┴┘\\n\\n";
+                    exitSelect = "┌┬\\q[─────閉じる──────,]┬┐\\n├┼\\q[────未読メール─────,OnCheckMail,0,0]┼┤\\n└┴\\q[────個別メール─────,OnCheckMail,2,0]┴┘\\n\\n";
                 }
                 string nextSelect;
                 nextSelect   = "└┴\\_a[OnCheckMail," + strChecked + "," + to_string( offset + 20 ) + "]─────次の20件─────\\_a┴┘\\n";
@@ -707,7 +734,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 sqlite3_close( db );
 
                 string start        = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\0\\b[2]\\_q";
-                string end          = "\\n\\_a[OnCheckMail,0,0]未読メール\\_a - \\_a[OnCheckMail,1," + strOffSet + "]既読メール\\_a\\_q \r\nScriptOption: nobreak,notranslate\r\n\r\n";
+                string end          = "\\n\\_a[OnCheckMail,0,0]未読メール\\_a - \\_a[OnCheckMail,1," + strOffSet + "]既読メール\\_a - \\_a[OnCheckMail,2," + strOffSet + "]個別メール\\_a\\_q \r\nScriptOption: nobreak,notranslate\r\n\r\n";
                 string selectRes    = s.str();
                 string total        = start + selectRes + end;
                 int i               = strlen( total.c_str() );
