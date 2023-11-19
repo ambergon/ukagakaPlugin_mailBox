@@ -1,3 +1,10 @@
+
+//なに
+//MailIDとyear mm dd hh において、全角を半角に切り替えるシステムを積む
+//これらが必要なのは実際に作成者が入力するシーンのみである。
+
+
+
 #include <windows.h>
 #include <string>
 #include <fstream>
@@ -103,6 +110,21 @@ string Sanitize( string sanitize ){
     sanitize = regex_replace( sanitize , regex( "vanishbymyself" ) ,"危険な文字" );
     return sanitize;
 }
+string ZenToHan( string str ){
+    str = regex_replace( str , regex( "０" ) ,"0" );
+    str = regex_replace( str , regex( "１" ) ,"1" );
+    str = regex_replace( str , regex( "２" ) ,"2" );
+    str = regex_replace( str , regex( "３" ) ,"3" );
+    str = regex_replace( str , regex( "４" ) ,"4" );
+    str = regex_replace( str , regex( "５" ) ,"5" );
+    str = regex_replace( str , regex( "６" ) ,"6" );
+    str = regex_replace( str , regex( "７" ) ,"7" );
+    str = regex_replace( str , regex( "８" ) ,"8" );
+    str = regex_replace( str , regex( "９" ) ,"9" );
+    str = regex_replace( str , regex( "　" ) ,"" );
+    str = regex_replace( str , regex( " " ) ,"" );
+    return str;
+}
 
 //Notified
 
@@ -165,11 +187,16 @@ void SendMail( char* GhostMenuName , char* MailID , char* YYYY , char* MM , char
     strGhostMenuName  = Sanitize( strGhostMenuName );
 
     string strMailID         = MailID       ;
+    strMailID                = ZenToHan( strMailID );
 
     //二桁にすること。結合すること。
     string strYYYY           = YYYY         ;
+    strYYYY                  = ZenToHan( strYYYY );
     string strMM             = MM           ;
+    strMM                    = ZenToHan( strMM );
     string strDD             = DD           ;
+    strDD                    = ZenToHan( strDD );
+
     //0X月0Y日
     stringstream streamMM;
     stringstream streamDD;
@@ -235,6 +262,7 @@ void DeleteMail( char* GhostMenuName , char* MailID ){
     strGhostMenuName         = Sanitize( strGhostMenuName );
 
     string strMailID         = MailID       ;
+    strMailID                = ZenToHan( strMailID );
 
     string strCheck;
     strCheck = regex_replace( strMailID , regex( R"([0-9])" ) ,"" );
@@ -262,6 +290,7 @@ int StatusMail( char* GhostMenuName , char* MailID ){
     strGhostMenuName         = Sanitize( strGhostMenuName );
 
     string strMailID         = MailID       ;
+    strMailID                = ZenToHan( strMailID );
 
     string strCheck;
     strCheck = regex_replace( strMailID , regex( R"([0-9])" ) ,"" );
@@ -491,7 +520,10 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 stringstream streamMailStatus; 
                 streamMailStatus << mailStatus;
                 string strMailStatus;
+
                 string R0 = Reference0;
+                R0        = ZenToHan( R0 );
+
                 strMailStatus = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nEvent: OnMailStatus\r\nReference0: " + R0 + "\r\nReference1: " + streamMailStatus.str() + "\r\n\r\n";
                 streamMailStatus.str("");
                 streamMailStatus.clear( stringstream::goodbit );
@@ -506,7 +538,9 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
             }
 
         //メールの状態を確認する機能
-        //第5引数 メールID
+        //引数1-4  横流し
+        //引数  5  メールID
+        //引数  6  横流し
         //
         //返り値0-4:横流し
         //返り値5  :メールID
@@ -531,6 +565,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
                 //mailID
                 string strR5 = Reference5;
+                strR5        = ZenToHan( strR5 );
 
                 strR0 = "Reference0: " + strR0 + "\r\n"; 
                 strR1 = "Reference1: " + strR1 + "\r\n";
@@ -569,6 +604,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
             if ( Reference0 != NULL ){
 
                 string R0 = Reference0;
+                R0        = ZenToHan( R0 );
 
                 char* MailID ;
                 char  statusMailsSep[]    = ":";
@@ -594,6 +630,39 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
                     resBuf = res_buf;
                 }
+            }
+
+
+        //要求したゴーストのが今まで送信したすべてのIDを取得する。
+        } else if ( strcmp( ID , "OnGetAllMailID" ) == 0 ) {
+            char* err = NULL;
+            string strGhostMenuName  = Sender;
+            strGhostMenuName         = Sanitize( strGhostMenuName );
+
+            sqlite3_open16( dbPATH , &db );
+            string sqlSelect = "select * from mailBox2 where GhostMenuName ='" + strGhostMenuName + "' order by MailID asc";
+            int sqliteRes = sqlite3_exec( db , sqlSelect.c_str() , callbackAllMailID, NULL , &err );
+
+#ifdef Debug
+            if ( sqliteRes != 0 ) {
+                printf( "%s\n" , err );
+            }
+#endif
+            sqlite3_close( db );
+
+            string MailIDs = regex_replace( s.str() , regex( ":$" ) ,"" );
+            s.str("");
+            s.clear( stringstream::goodbit );
+
+            if ( MailIDs != "" ){
+                string strGetAllMailID;
+                strGetAllMailID = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nEvent: OnAllMailID\r\nReference0: " + MailIDs + "\r\n\r\n";
+                int i = strlen( strGetAllMailID.c_str() );
+                char* res_buf;
+                res_buf = (char*)calloc( i + 1 , sizeof(char) );
+                memcpy( res_buf , strGetAllMailID.c_str() , i );
+
+                resBuf = res_buf;
             }
 
 
@@ -749,37 +818,6 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
             }
 
 
-        //要求したゴーストのが今まで送信したすべてのIDを取得する。
-        } else if ( strcmp( ID , "OnGetAllMailID" ) == 0 ) {
-            char* err = NULL;
-            string strGhostMenuName  = Sender;
-            strGhostMenuName         = Sanitize( strGhostMenuName );
-
-            sqlite3_open16( dbPATH , &db );
-            string sqlSelect = "select * from mailBox2 where GhostMenuName ='" + strGhostMenuName + "' order by MailID asc";
-            int sqliteRes = sqlite3_exec( db , sqlSelect.c_str() , callbackAllMailID, NULL , &err );
-
-#ifdef Debug
-            if ( sqliteRes != 0 ) {
-                printf( "%s\n" , err );
-            }
-#endif
-            sqlite3_close( db );
-
-            string MailIDs = regex_replace( s.str() , regex( ":$" ) ,"" );
-            s.str("");
-            s.clear( stringstream::goodbit );
-
-            if ( MailIDs != "" ){
-                string strGetAllMailID;
-                strGetAllMailID = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nEvent: OnAllMailID\r\nReference0: " + MailIDs + "\r\n\r\n";
-                int i = strlen( strGetAllMailID.c_str() );
-                char* res_buf;
-                res_buf = (char*)calloc( i + 1 , sizeof(char) );
-                memcpy( res_buf , strGetAllMailID.c_str() , i );
-
-                resBuf = res_buf;
-            }
 
         ////通知内容をOnOtherGhostを悪用して追加する。
         //} else if ( strcmp( ID , "OnOtherGhostTalk" ) == 0 && NewMail != 0 ) {
