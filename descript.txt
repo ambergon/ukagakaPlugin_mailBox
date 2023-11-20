@@ -1,6 +1,7 @@
 Charset,UTF-8
 readme.charset,UTF-8
-readme.readme.md
+
+readme,ReadMe.md
 type,plugin
 name,MailBox
 craftman,ambergon
