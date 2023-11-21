@@ -1,4 +1,8 @@
 # ukagakaPlugin_mailBox
+伺か/SSP用プラグインMailBox
+ゴーストからのメールが届くように(送れるようになる)プラグインです。
+目的のゴーストをたたせていないときでも届きます。
+
 このプラグインは、ゴーストがより人間らしいコミュニケーションをとれるようにするために開発されました。
 
 
@@ -6,8 +10,7 @@
 ゴーストの組み込みはまだお控えください。
 
 
-
-
+## 
 
 書かねばならないこと。
 機能
@@ -21,37 +24,21 @@ satori
 書き方の理想は、
 まあ、ukadocを参考にするべきだろうな。
 
+## 一般ユーザ向け
+プラグイン導入後、ゴーストの右クリック -> プラグイン -> MailBox を開くことによってメニューを開くことができます。
+以下項目
+
+- 未読メール
+- 既読メール
+- 個別メール
+    メニューを開いたゴーストの未読&既読メールを表示
+
+#### 自動機能
+SSP起動後と約一時間おきに未通知メールの通知が入ります。
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## 一般ユーザの使用
-#### 起動時のメール確認
-起動時に未読メールのチェックを行います。
-
-
-#### メールを確認する。
-プラグインメニューからMailBoxを呼ぶと未読メール・既読メールの確認ができます。
-
-
-## ゴースト作者の使用
+## ゴースト開発者向け
+#### 機能一覧
 このプラグインでは、下記の機能が提供されます。
 
 - メールの送信
@@ -60,39 +47,37 @@ satori
 - 単一のメールの状態確認
 - 複数のメールの状態確認
 
-
-#### 廃止
-0.0.7
-- 未通知メールの確認: OnCheckNewMail
-
-
-#### 注意事項
-各ゴーストのメールはゴーストのメニュー名とメールIDを使用して管理しています。
-後述しますが、同じメールIDを用いることで、そのメールの状態・削除などを管理するので、送信の際は重複に気を付けてください。
-同じメールIDで送信された場合、過去のものを削除したうえで、新しいメールの処理を行います。
-
-また、日付やメールIDは半角の数字で入力する必要があります。
+## 関数
+#### 共通の知識
+- すべてのメールはメールIDで管理されています。
+- メールIDは数字で管理します。
+- 同じメールIDでメールを送信すると既存のメールが上書きされます。
+- この際、上書きされたメールは未通知・未読状態になります。
+- 送信日が明日以降の場合は問題なく指定した日にユーザに届きます。
+- 同じメールIDでもゴーストメニューの名前が違う限り、区別して管理されます。
 
 
-#### メールの送信
-メールは到着する日を指定して送信します。
-今日や過去の日付に送るとその日からメールを確認できます。
-時刻の指定は予定しておりません。
+#### メールの送信:OnSendMail
+```
+\![notifyplugin,MailBox,OnSendMail,メールのID,送信年,送信月,送信日,送信者名,メールタイトル,メール本文]
+```
+
+- notifypluginを使用して送信します。
+- メールは到着する日を指定して送信します。
+- 今日や過去の日付に送るとその日からメールを確認できます。
+- ,,の間にスペースを開けずに入力してください。
+- 時刻の指定は予定しておりません。
 
 日付の指定は下記のSAORIを使うと快適になるでしょう。
-
-- [GitHub - ambergon/ukagakaSaori_CalcCalendar](https://github.com/ambergon/ukagakaSaori_CalcCalendar)
-- [GitHub - ambergon/ukagakaSaori_DiffCalendar](https://github.com/ambergon/ukagakaSaori_DiffCalendar)
+- [GitHub - ambergon/ukagakaSaori_CalcCalendarClang](https://github.com/ambergon/ukagakaSaori_CalcCalendarClang)
+- [GitHub - ambergon/ukagakaSaori_DiffCalendarClang](https://github.com/ambergon/ukagakaSaori_DiffCalendarClang)
 
 ```
-//SendおよびDeleteではraiseよりnotifyを使用することを推奨
-
-//サクラスクリプト
-"\![notifyplugin,MailBox,OnSendMail,メールのID,送信年,送信月,送信日,送信者名,メールタイトル,メール本文]"
-//例文
-"\![notifyplugin,MailBox,OnSendMail,0,%(year),%(month),%(day),琥珀,初めまして,無事に届いていますか?]"
+//さとり例文
+：送信\![notifyplugin,MailBox,OnSendMail,0,（現在年）,（現在月）,（現在日）,さとり,水族館,本文]
+//yaya例文
+"送信\![notifyplugin,MailBox,OnSendMail,0,%(year),%(month),%(day),送信者,タイトル,本文]"
 ```
-
 メール内容にサクラスクリプトのリンクなどを組み込むことは可能ですが、メールの表示は現在表示中のゴーストに使用されるため、あまり使用する機会はないでしょう。
 サクラスクリプト側の仕様で一部の記号などが使えなかったりするので、手元で試してから使用してください。
 下記の例だと`「]」`を`「\]」`にして送信しています。
@@ -100,106 +85,100 @@ satori
 "\![raiseplugin,MailBox,OnSendMail,0,%(year),%(month),%(day),琥珀,初めまして。,無事に届いていますか?\n\_a[OnXX\]LINK\_a]"
 ```
 
-
-#### メールの削除
-例えば、最後の起動からN日後に送信するようにしたとします。
-それより早く起動された場合などに使用することを想定しています。
+#### メールの削除:OnDeleteMail
 ```
-"\![notifyplugin,MailBox,OnDeleteMail,メールID]"
-//SendおよびDeleteではraiseよりnotifyを使用することを推奨
-//"\![raiseplugin,MailBox,OnDeleteMail,メールID]"
+\![notifyplugin,MailBox,OnDeleteMail,メールID]
 ```
+notifypluginを使用して削除します。
+主な用途は、一週間以上起動していなかった場合にメールを送信したい時、
+それ以前に起動した場合に削除するなどするとよいでしょう。
 
 
-#### ゴーストが送信済みのすべてのメールIDの取得
+#### ゴーストが送信済みのすべてのメールIDの取得:OnGetAllMailID
+raisepluginを使用して呼び出す。
+
 呼び出し
 ```
-"\![raiseplugin,MailBox,OnGetAllMailID]"
+\![raiseplugin,MailBox,OnGetAllMailID]
 ```
 受け取り
+
+- 返り値はID:ID:ID...で取得。
+- [:]は半角文字です。
 ```
-//ID:ID:ID...で取得
+＃さとり
+＊OnAllMailID 
+：すべての使用済みID = （R0） 
+
+//yaya
 OnAllMailID {
     reference[0]
 }
 ```
 
 
-#### 単一のメールの状態チェック
+#### メールの状態を確認:OnStatusMail
+raisepluginを使用して呼び出す。
 指定したメールIDのステータスを確認することができます。
 これを実行すると`OnMailStatus`関数がゴーストに呼ばれます。
 
+呼び出し。
 ```
-//確認用関数
-"\![raiseplugin,MailBox,OnStatusMail,メールID]"
+\![raiseplugin,MailBox,OnStatusMail,メールID]
+```
+受け取り
 
+- Reference0 : 確認したメールID
+- Reference1 : そのメールのステータス
+    - 0 : メールが存在しない
+    - 1 : メールがまだ届いていない
+    - 2 : 届いているが未読
+    - 3 : 届いていて  既読
+```
+＃さとり
+＊OnMailStatus
+：MailID   =（R0）
+MailStatus =（R1）
 
-////reference[0]
-//メールID
-////reference[1]
-//0 : メールが存在しない
-//1 : メールがまだ届いていない
-//2 : 届いているが未読
-//3 : 届いていて  既読
+//yaya
 OnMailStatus {
-    //このようにしておけば試しやすいでしょう。
     _text = "mailID : " + reference[0] + "\n" + "status : " + reference[1]
     _text
 }
 ```
-この関数を使用する際にしたい事は大体決まっているので以下のようにできます。
-
-- まだ届いていない
-    メールIDを使用して削除
-
-- 届いているが未読
-    専用トークに派生
-
-- 届いているし既読
-    専用トークに派生
-
-```
-OnMailStatus {
-    //_text = "mailID : " + reference[0] + "\n" + "status : " + reference[1]
-    //_text
-    _mailID = reference[0]
-
-    if reference[1] == "1" {
-        //Delele処理
-        "削除した。\![raiseplugin,MailBox,OnDeleteMail,%(_mailID)]"
-    } elseif reference[1] == "2" {
-        "何で返事してくれないの?"
-    } elseif reference[1] == "3" {
-        "読んでくれたんだ。"
-    } else {
-        //"メールを送り忘れた"
-        //もしくは既に削除した。
-    }
-}
-```
 
 
-#### 単一のメールの状態チェックEX
-OnStatusMailと同等だが、引数を5つ横流しすることができる。
+#### メールの状態を確認EX:OnStatusMailEX
+OnStatusMailと同等だが、任意の引数を5つ横流しすることができる。
+使用するとOnMailStatusEXが呼ばれる。
 横流しはOnBoot系の関数と同じ配置にするために以下のようになった。
+ただし、OnGhostChangedなどのR1(切り替え時のスクリプト)などを直接渡すと、`\e`が入っていたりでバグの素だったりする。適時置換して使うこと。
 
 呼び出し
 ```
-//"\![raiseplugin,MailBox,OnStatusMailEX, 横流し0, 横流し1, 横流し2, 横流し3, 横流し4, メールID , 横流し5]
-"\![raiseplugin,MailBox,OnStatusMailEX,A,B,C,D,E,メールID,F]"
+\![raiseplugin,MailBox,OnStatusMailEX, 横流し0, 横流し1, 横流し2, 横流し3, 横流し4, メールID , 横流し5]
 ```
 受け取り
-```
-//Reference 0: 横流し0 
-//Reference 1: 横流し1 
-//Reference 2: 横流し2 
-//Reference 3: 横流し3 
-//Reference 4: 横流し4 
-//Reference 5: メールID 
-//Reference 6: メールステータス
-//Reference 7: 横流し5 
-//Reference 8: 横流し6 
 
+- Reference 0: 横流し0 
+- Reference 1: 横流し1 
+- Reference 2: 横流し2 
+- Reference 3: 横流し3 
+- Reference 4: 横流し4 
+- Reference 5: メールID 
+- Reference 6: メールステータス
+- Reference 7: 横流し5 
+```
+＃さとり
+＊OnMailStatusEX
+： R0 = （R0）
+R1 = （R1）
+R2 = （R2）
+R3 = （R3）
+R4 = （R4）
+R5 = （R5）
+
+//yaya
 OnMailStatusEX {
     _text = "mailID : " + reference[0] + "\n" + "status : " + reference[1] + "\nR2 : " + reference[2] + "\nR3 : " + reference[3] + "\nR4 : " + reference[4] + "\nR5 : " + reference[5] + "\nR6 : " + reference[6]
     _text
@@ -207,14 +186,27 @@ OnMailStatusEX {
 ```
 
 
-#### 複数のメールの状態確認
+#### 複数のメールの状態確認:OnStatusMails
 呼び出し
+
+メールIDを半角[:]区切りでメールステータスを複数要求できます。
 ```
 //OnStatusMail[s]
-"\![raiseplugin,MailBox,OnStatusMails,0:1:2:3:4:5]"
+\![raiseplugin,MailBox,OnStatusMails,0:1:2:3:4:5]
 ```
 受け取り
+同じく半角[:]区切りでステータスが返ってきます。
+
+- Reference 0: 問い合わせたID詰め合わせ
+- Reference 1: 問い合わせたステータス詰め合わせ
 ```
+＃OnMail[s]Status
+＃さとり
+＊OnMailsStatus
+：要求したIDs = （R0） 
+：要求したステータスs = （R1） 
+
+//yaya
 //OnMail[s]Status
 OnMailsStatus {
     _text = "mailIDs : " + reference[0] + "\n" + "status : " + reference[1]
@@ -223,24 +215,17 @@ OnMailsStatus {
 ```
 
 
-
-
-
 ## Other
 このプラグインは無保証で配布されます。
 リンク、同梱などは問題ありません。
-好きに使ってください。今の時代にポケベル・携帯・スマホ・その他持ってないってマジ?みたいな導入すればいいんじゃないですかね(ぶんなげ
+好きに使ってください。
+今の時代にポケベル・携帯・スマホ・その他持ってないってマジ?みたいな導入すればいいんじゃないでしょうか。(ぶんなげ
 12/25日に正式公開予定です。
 なので事前配布ユーザはそれまで待ってね。
 
 
-
-
-
 ## Author
 ambergon
-
-
 
 
 
