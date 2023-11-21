@@ -60,7 +60,7 @@ SSP起動後と約一時間おきに未通知メールの通知が入ります�
 
 ```
 //さとり例文
-：送信\![notifyplugin,MailBox,OnSendMail,0,（現在年）,（現在月）,（現在日）,さとり,水族館,本文]
+：送信\![notifyplugin,MailBox,OnSendMail,0,（現在年）,（現在月）,（現在日）,送信者,タイトル,本文]
 //yaya例文
 "送信\![notifyplugin,MailBox,OnSendMail,0,%(year),%(month),%(day),送信者,タイトル,本文]"
 ```
@@ -68,7 +68,8 @@ SSP起動後と約一時間おきに未通知メールの通知が入ります�
 サクラスクリプト側の仕様で一部の記号などが使えなかったりするので、手元で試してから使用してください。
 下記の例だと`「]」`を`「\]」`にして送信しています。
 ```
-"\![raiseplugin,MailBox,OnSendMail,0,%(year),%(month),%(day),琥珀,初めまして。,無事に届いていますか?\n\_a[OnXX\]LINK\_a]"
+//yaya
+"\![raiseplugin,MailBox,OnSendMail,0,%(year),%(month),%(day),送信者,タイトル,無事に届いていますか?\n\_a[OnXX\]LINK\_a]"
 ```
 
 #### メールの削除:OnDeleteMail
@@ -77,7 +78,7 @@ SSP起動後と約一時間おきに未通知メールの通知が入ります�
 ```
 notifypluginを使用して削除します。
 主な用途は、一週間以上起動していなかった場合にメールを送信したい時、
-それ以前に起動した場合に削除するなどするとよいでしょう。
+それ以前に起動された場合に削除するなどでしょう。
 
 
 #### ゴーストが送信済みのすべてのメールIDの取得:OnGetAllMailID
