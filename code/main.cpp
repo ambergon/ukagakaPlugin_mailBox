@@ -512,6 +512,16 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
             }
 
 
+        //未達ならメールを削除する。
+        //引数0 : メールID
+        } else if ( strcmp( ID , "OnDeleteMailNotArrive" ) == 0 ) {
+            if ( Reference0 != NULL ){
+                int mailStatus = StatusMail( Sender , Reference0 );
+                if( mailStatus == 1 ){
+                    DeleteMail( Sender , Reference0 );
+                }
+            }
+
         //メールの状態を確認する機能
         //第0引数 メールID
         } else if ( strcmp( ID , "OnStatusMail" ) == 0 ) {

@@ -81,6 +81,15 @@ notifypluginを使用して削除します。
 それ以前に起動された場合に削除するなどでしょう。
 
 
+#### 未達ならばメール削除:OnDeleteMailNotArrive
+```
+\![notifyplugin,MailBox,OnDeleteMail,メールID]
+```
+- notifypluginを使用して実行。
+- まだ届いていない場合のみ指定したメールを削除する。
+- OnMailsStatus を経由せずに処理できる利点がある。
+
+
 #### ゴーストが送信済みのすべてのメールIDの取得:OnGetAllMailID
 raisepluginを使用して呼び出す。
 
