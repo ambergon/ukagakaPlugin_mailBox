@@ -505,6 +505,25 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
             }
 
 
+        //メールの送信をステータスが0 の時に行う。
+        } else if ( strcmp( ID , "OnSendMailNotUpdate" ) == 0 ) {
+            int mailStatus = StatusMail( Sender , Reference0 );
+            if( mailStatus == 1 ){
+                if (! ( Sender == NULL || Reference0 == NULL || Reference1 == NULL || Reference2 == NULL || Reference3 == NULL || Reference4 == NULL || Reference5 == NULL || Reference6 == NULL )){
+                    SendMail( Sender , Reference0 ,  Reference1 , Reference2 , Reference3 , Reference4 , Reference5 , Reference6 );
+                }
+            }
+
+        //メールの送信をステータスが0 or 1 の時に行う。
+        } else if ( strcmp( ID , "OnSendMailNotArrive" ) == 0 ) {
+            int mailStatus = StatusMail( Sender , Reference0 );
+            if( mailStatus == 0 || mailStatus == 1 ){
+                if (! ( Sender == NULL || Reference0 == NULL || Reference1 == NULL || Reference2 == NULL || Reference3 == NULL || Reference4 == NULL || Reference5 == NULL || Reference6 == NULL )){
+                    SendMail( Sender , Reference0 ,  Reference1 , Reference2 , Reference3 , Reference4 , Reference5 , Reference6 );
+                }
+            }
+
+
         //メール削除機能
         } else if ( strcmp( ID , "OnDeleteMail" ) == 0 ) {
             if ( Reference0 != NULL ){

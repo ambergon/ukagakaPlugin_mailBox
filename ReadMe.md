@@ -72,6 +72,23 @@ SSP起動後と約一時間おきに未通知メールの通知が入ります�
 "\![raiseplugin,MailBox,OnSendMail,0,%(year),%(month),%(day),送信者,タイトル,無事に届いていますか?\n\_a[OnXX\]LINK\_a]"
 ```
 
+
+#### 上書きしないメールの送信:OnSendMailNotUpdate
+```
+\![notifyplugin,MailBox,OnSendMailNotUpdate,メールのID,送信年,送信月,送信日,送信者名,メールタイトル,メール本文]
+```
+引数はOnSendMailと同じ。
+ただし、メールが存在しないときのみ送信される。
+
+
+#### 届いていないときのみメールの送信:OnSendMailNotArrive
+```
+\![notifyplugin,MailBox,OnSendMailNotArrive,メールのID,送信年,送信月,送信日,送信者名,メールタイトル,メール本文]
+```
+引数はOnSendMailと同じ。
+ただし、メールが存在しない時とまだ届いていないときのみ送信される。
+
+
 #### メールの削除:OnDeleteMail
 ```
 \![notifyplugin,MailBox,OnDeleteMail,メールID]
