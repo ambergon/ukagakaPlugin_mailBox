@@ -101,7 +101,7 @@ notifypluginを使用して削除します。
 
 #### 未達ならばメール削除:OnDeleteMailNotArrive
 ```
-\![notifyplugin,MailBox,OnDeleteMail,メールID]
+\![notifyplugin,MailBox,OnDeleteMailNotArrive,メールID]
 ```
 - notifypluginを使用して実行。
 - まだ届いていない場合のみ指定したメールを削除する。
