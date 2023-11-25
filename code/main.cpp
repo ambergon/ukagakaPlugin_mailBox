@@ -141,6 +141,12 @@ int callbackMailList(void *anything, int keyCount, char **value, char **key){
     }
     return 0;
 }
+//anything = offset
+int callbackDevMailList(void *anything, int keyCount, char **value, char **key){
+    s << "├┼\\q[" << value[4] << " : " << value[2] << " : " << value[5] << ",OnDevMail," << value[0] << "," << value[1] << "," << *(int*)anything << "]\\n";
+    return 0;
+}
+
 int callbackOpenMail(void *anything, int keyCount, char **value, char **key){
     s << "   【" << value[5] << "】" << "\\n\\n" << value[6] << "\\n\\n\\n   【" << value[0] << "】";
     return 0;
@@ -704,6 +710,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
             resBuf = res_buf;
 
 
+
         //第0引数 未読 = 0 , 既読 = 1 , そのゴーストのメール = 2
         //第1引数 offset
         } else if ( strcmp( ID , "OnCheckMail" ) == 0 ) {
@@ -712,7 +719,6 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 string GhostMenuName = Sender;
                 GhostMenuName = Sanitize( GhostMenuName );
 
-                string strID        = ID;
                 string strChecked   = Reference0 ;
                 string strOffset    = Reference1 ;
                 int offset          = atoi( Reference1 );
@@ -828,7 +834,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 sqlite3_close( db );
 
                 string start        = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\0\\b[2]\\_q";
-                string end          = "\\n\\_a[OnCheckMail,0,0]未読メール\\_a - \\_a[OnCheckMail,1," + strOffSet + "]既読メール\\_a - \\_a[OnCheckMail,2," + strOffSet + "]個別メール\\_a\\_q \r\nScriptOption: nobreak,notranslate\r\n\r\n";
+                string end          = "\\n\\_a[OnCheckMail,0,0]未読メール\\_a - \\_a[OnCheckMail,1," + strOffSet + "]既読メール\\_a - \\_a[OnCheckMail,2," + strOffSet + "]個別メール\\_a \r\nScriptOption: nobreak,notranslate\r\n\r\n";
                 string selectRes    = s.str();
                 string total        = start + selectRes + end;
                 int i               = strlen( total.c_str() );
@@ -842,6 +848,110 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 s.clear( stringstream::goodbit );
             }
 
+
+
+        //引数 0 : オフセット
+        //開発者向けメニューを作成する。
+        //見れるメールはすべてのゴーストのメール
+        //今日より先のメール
+        } else if ( strcmp( ID , "OnDevList" ) == 0 ) {
+
+            if ( Reference0 != NULL ) {
+                string strOffset    = Reference0 ;
+                int offset          = atoi( Reference0 );
+
+                string strYMD;
+                stringstream streamYMD;
+                time_t t = time(nullptr);
+                const tm* localTime = localtime(&t);
+                streamYMD << localTime->tm_year + 1900;
+                streamYMD << setw(2) << setfill('0') << localTime->tm_mon + 1;
+                streamYMD << setw(2) << setfill('0') << localTime->tm_mday;
+                streamYMD >> strYMD;
+
+
+                char* err = NULL;
+                sqlite3_open16( dbPATH , &db );
+
+                //ghost個別確認
+                string mailList ;
+                mailList = "select * from mailBox2 where  YYYYmmdd > " + strYMD + " order by YYYYmmdd desc,MailID desc limit 20 offset " + strOffset ;
+
+                int sqliteRes = sqlite3_exec( db , mailList.c_str() , callbackDevMailList , (void*)&offset , &err );
+#ifdef Debug
+                if ( sqliteRes != 0 ){
+                    printf( "Select%s\n" , err );
+                }
+#endif
+                sqlite3_close( db );
+
+                string start        = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\0\\b[2]\\_q";
+                string backSelect;
+                if( offset < 20 ){
+                    backSelect   = "┌┬──────最新──────┬┐\\n";
+                } else {
+                    backSelect   = "┌┬\\_a[OnDevList," + to_string( offset - 20 ) + "]─────前の20件─────\\_a┬┐\\n";
+                }
+                string exitSelect;
+                exitSelect = "┌┬\\q[─────閉じる──────,]┬┐\\n└┴\\──────────────┴┘\\n\\n";
+
+                string nextSelect;
+                nextSelect   = "└┴\\_a[OnDevList," + to_string( offset + 20 ) + "]─────次の20件─────\\_a┴┘\\n";
+
+                string end          = "\\_q\r\nScriptOption: nobreak,notranslate\r\n\r\n";
+                string selectRes    = s.str();
+                string total        = start + exitSelect + backSelect + selectRes + nextSelect + end;
+                int i               = strlen( total.c_str() );
+
+                char* res_buf;
+                res_buf = (char*)calloc( i + 1 , sizeof(char) );
+                memcpy( res_buf , total.c_str() , i );
+                resBuf = res_buf;
+
+
+                streamYMD.str("");
+                streamYMD.clear( stringstream::goodbit );
+                s.str("");
+                s.clear( stringstream::goodbit );
+            }
+        //第0引数 : ゴースト名
+        //第1引数 : メールID
+        //第2引数 : それらのオフセット
+        } else if ( strcmp( ID , "OnDevMail" ) == 0 ) {
+            if ( Reference0 != NULL && Reference1 != NULL && Reference2 != NULL ){
+                string strGhostMenuName = Reference0;
+                string strMailID        = Reference1;
+                string strOffSet        = Reference2;
+
+
+                char* err = NULL;
+                sqlite3_open16( dbPATH , &db );
+
+                //printf( "Update%s\n" , err );
+                string openMail = "select * from mailBox2 where GhostMenuName = '" + strGhostMenuName + "' and MailID = " + strMailID  ;
+                int sqliteRes = sqlite3_exec( db , openMail.c_str() , callbackOpenMail , NULL , &err );
+#ifdef Debug
+                if ( sqliteRes != 0 ) {
+                    printf( "%s\n" , err );
+                }
+#endif
+                //printf( "Select%s\n" , err );
+                sqlite3_close( db );
+
+                string start        = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\0\\b[2]\\_q";
+                string end          = "\\n\\_a[OnDevList," + strOffSet + "]開発メール\\_a\r\nScriptOption: nobreak,notranslate\r\n\r\n";
+                string selectRes    = s.str();
+                string total        = start + selectRes + end;
+                int i               = strlen( total.c_str() );
+
+                char* res_buf;
+                res_buf = (char*)calloc( i + 1 , sizeof(char) );
+                memcpy( res_buf , total.c_str() , i );
+                resBuf = res_buf;
+
+                s.str("");
+                s.clear( stringstream::goodbit );
+            }
 
 
         ////通知内容をOnOtherGhostを悪用して追加する。
