@@ -100,7 +100,8 @@ extern "C" __declspec(dllexport) bool __cdecl unload(void){
     return true;
 }
 
-
+/*{{{*/
+// 共通関数
 string Sanitize( string sanitize ){
     sanitize = regex_replace( sanitize , regex( "'" ) ,"" );
     sanitize = regex_replace( sanitize , regex( "vanishbymyself" ) ,"危険な文字" );
@@ -122,8 +123,10 @@ string ZenToHan( string str ){
     return str;
 }
 
-//Notified
 
+/*}}}*/
+// {{{
+// sql Call Back 関数
 //| 旧mailBox     |        |          |        |       |          |         | 
 //| GhostMenuName | MailID | YYYYmmdd | Sender | Title | MailText | Checked |
 //
@@ -181,6 +184,9 @@ int callbackAllMailID(void *anything, int keyCount, char **value, char **key){
 }
 
 
+/*}}}*/
+/*{{{*/
+// 基本関数
 void SendMail( char* GhostMenuName , char* MailID , char* YYYY , char* MM , char* DD , char* Sender , char* Title , char* MailText ){
     //引数が正しくなくnullの可能性。足りない場合の処理
     char* err = NULL;
@@ -280,6 +286,7 @@ void DeleteMail( char* GhostMenuName , char* MailID ){
 #endif
     sqlite3_close( db );
 }
+
 //err -1
 //0メールが存在しない
 //1まだ届いていない
@@ -323,6 +330,7 @@ int StatusMail( char* GhostMenuName , char* MailID ){
 
     return mailStatus;
 }
+/*}}}*/
 
 
 extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
@@ -441,7 +449,8 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
             char res_buf[] = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nValue: 1.0.0\r\n\r\n";
             resBuf = res_buf;
 
-
+        /*{{{*/
+        ////通知機能
         //1秒ないし、短期間でループさせる。
         //回転数はこっちで制限を用意して決める。
         //一時間に一回程度で大丈夫だけど、
@@ -496,9 +505,8 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
                 }
             }
-
-
-
+        /*}}}*/
+        /*{{{*/
         ////Ghost作者が使用する機能
         //メール送信機能
         } else if ( strcmp( ID , "OnSendMail" ) == 0 ) {
@@ -625,7 +633,6 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
             }
 
 
-
         //引数-区切りで
         //第0引数 : メールID-メールID-メールID-...
         //返却先  : OnMailsStatus
@@ -697,6 +704,8 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
             }
 
 
+        /*}}}*/
+        /*{{{*/
         ////Userが触る機能
         //メールボックス
         //┌ └ ┐ ┘ ├ ┤ ─ ┬ ┼ ┴
@@ -848,10 +857,10 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 s.clear( stringstream::goodbit );
             }
 
-
-
+        /*}}}*/
+        /*{{{*/
+        ////開発者向けメニューを作成する。
         //引数 0 : オフセット
-        //開発者向けメニューを作成する。
         //見れるメールはすべてのゴーストのメール
         //今日より先のメール
         } else if ( strcmp( ID , "OnDevList" ) == 0 ) {
@@ -952,26 +961,9 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 s.str("");
                 s.clear( stringstream::goodbit );
             }
+        /*}}}*/
 
-
-        ////通知内容をOnOtherGhostを悪用して追加する。
         //} else if ( strcmp( ID , "OnOtherGhostTalk" ) == 0 && NewMail != 0 ) {
-        //    NewMail = 0;
-
-        //    string start        = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: ";
-        //    string end          = "\r\nScriptOption: nobreak,notranslate\r\n\r\n";
-        //    string total               = start + strMailCount + end;
-
-
-        //    int i = strlen( total.c_str() );
-        //    char* res_buf;
-        //    res_buf = (char*)calloc( i + 1 , sizeof(char) );
-        //    memcpy( res_buf , total.c_str() , i );
-        //    resBuf = res_buf;
-
-        //    //無限ループ回避
-        //    //if ( strcmp( Reference4 , "OnOtherGhostTalk" ) != 0 && strcmp( Reference2 , "plugin-script,notranslate" ) != 0 ) {
-        //    //}
 
         } else if ( strcmp( ID , "OnGhostBoot" ) == 0 ) {
 #ifdef Debug
