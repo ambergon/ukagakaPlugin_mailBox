@@ -237,7 +237,10 @@ OnMailsStatus {
 
 #### プラグインの存在を通知する関数。:OnExistPluginMailBox
 reference:無し
-OnBoot直後に発生します。
+OnBoot直後にゴーストにOnExistPluginMailBoxイベントを送ります。
+フラグ管理をすることで、MailBoxがインストール済みかどうかの処理ができます。
+(OnBootには間に合わない)
+
 里々だとこのようにすれば、検知できるでしょう。
 ```
 ＃＃ プラグインの存在検知 = ExistPluginMailBox
