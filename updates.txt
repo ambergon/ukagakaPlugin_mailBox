@@ -1,7 +1,7 @@
 charset,Shift_JIS
 file,.gitignored3ce2eae6ca9390e93d78856c30465f8size=263date=2023-11-08T19:59:55
-file,ReadMe.md1695ebc8bc05acea60c93b141a3a9efcsize=8681date=2023-11-25T21:02:31
+file,ReadMe.md8b0bad0e66c9251144720fdcc92f6df3size=9796date=2023-11-28T18:17:12
 file,descript.txta320ac241729338b90de6ff34dca6d46size=404date=2023-11-20T19:56:41
 file,developer_options.txt7ca5010be2d3da4867a2ad073fcc2932size=68date=2023-11-11T07:43:28
 file,install.txt546820c355858cd0b2302fe5fea5b0fbsize=43date=2023-11-05T22:29:36
-file,main.dllef5db175657fb9fcd69a6a7fa436bacasize=5543252date=2023-11-25T20:59:34
+file,main.dll76ab4e84dc02e1443b0ed948db3a7b20size=5544276date=2023-11-28T18:06:29

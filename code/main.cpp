@@ -13,6 +13,13 @@
 //stringstream
 #include <iomanip>
 
+
+//#define Debug
+
+
+
+
+
 using namespace std;
 
 FILE* ConsoleWindow;
@@ -26,21 +33,19 @@ sqlite3 *db = NULL;
 
 static string strYMD;
 static stringstream s;
+static int SecChange = 60;
 
+
+//{{{
 int main(int argc, char* argv[]) {
     printf( "%s\n" , argv[0] );
     return 0;
 }
-
-static int SecChange = 60;
-
-
-//#define Debug
-
-
+//}}}
+//{{{
+extern "C" __declspec(dllexport) bool __cdecl load(HGLOBAL h, long len){
 //hにはdllまでのLogFilePathが入っている。
 //lenはアドレスの長さ。\0の分は入っていない。
-extern "C" __declspec(dllexport) bool __cdecl load(HGLOBAL h, long len){
 
 #ifdef Debug
     AllocConsole();
@@ -85,7 +90,8 @@ extern "C" __declspec(dllexport) bool __cdecl load(HGLOBAL h, long len){
 
     return true;
 }
-
+//}}}
+//{{{
 extern "C" __declspec(dllexport) bool __cdecl unload(void){
     free( pluginDirectory );
 
@@ -99,6 +105,8 @@ extern "C" __declspec(dllexport) bool __cdecl unload(void){
 
     return true;
 }
+//}}}
+
 
 /*{{{*/
 // 共通関数
@@ -449,8 +457,8 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
             char res_buf[] = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nValue: 1.0.0\r\n\r\n";
             resBuf = res_buf;
 
-        /*{{{*/
-        ////通知機能
+        //{{{
+        ////新着メール通知機能
         //1秒ないし、短期間でループさせる。
         //回転数はこっちで制限を用意して決める。
         //一時間に一回程度で大丈夫だけど、
@@ -510,8 +518,22 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
 
 
-        /*}}}*/
-        /*{{{*/
+        //}}}
+        //{{{
+        ////プラグインの存在を通知する機能
+        } else if ( strcmp( ID , "OnGhostBoot" ) == 0 ) {
+            string OnExistPluginMailBox = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nEvent: OnExistPluginMailBox\r\n\r\n";
+            int i = strlen( OnExistPluginMailBox.c_str() );
+            char* res_buf;
+            res_buf = (char*)calloc( i + 1 , sizeof(char) );
+            memcpy( res_buf , OnExistPluginMailBox.c_str() , i );
+            resBuf = res_buf;
+
+
+
+
+        //}}}
+        //{{{
         ////Ghost作者が使用する機能
         //メール送信機能
         } else if ( strcmp( ID , "OnSendMail" ) == 0 ) {
@@ -712,14 +734,8 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
 
 
-
-
-
-
-
-
-        /*}}}*/
-        /*{{{*/
+        //}}}
+        //{{{
         ////Userが触る機能
         //メールボックス
         //┌ └ ┐ ┘ ├ ┤ ─ ┬ ┼ ┴
@@ -877,8 +893,8 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
 
 
-        /*}}}*/
-        /*{{{*/
+        //}}}
+        //{{{
         ////開発者向けメニューを作成する。
         //引数 0 : オフセット
         //見れるメールはすべてのゴーストのメール
@@ -985,20 +1001,12 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
 
 
-
-
-        /*}}}*/
+        //}}}
 
         //} else if ( strcmp( ID , "OnOtherGhostTalk" ) == 0 && NewMail != 0 ) {
 
-        } else if ( strcmp( ID , "OnGhostBoot" ) == 0 ) {
-#ifdef Debug
-            printf( "%s\n" , Reference0 );
-            printf( "%s\n" , Reference1 );
-            printf( "%s\n" , Reference2 );
-            printf( "%s\n" , Reference3 );
-            printf( "%s\n" , Reference4 );
-#endif
+
+
         } else if ( strcmp( ID , "OnGhostExit" ) == 0 ) {
 #ifdef Debug
             printf( "%s\n" , Reference0 );

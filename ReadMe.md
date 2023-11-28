@@ -32,6 +32,7 @@ SSP起動後と約一時間おきに未通知メールの通知が入ります�
 - 送信済みのすべてのメールIDの取得
 - 単一のメールの状態確認
 - 複数のメールの状態確認
+- プラグインの存在を通知する関数。
 
 
 #### デバッグメニュー
@@ -231,6 +232,26 @@ OnMailsStatus {
     _text = "mailIDs : " + reference[0] + "\n" + "status : " + reference[1]
     _text
 }
+```
+
+
+#### プラグインの存在を通知する関数。:OnExistPluginMailBox
+reference:無し
+OnBoot直後に発生します。
+里々だとこのようにすれば、検知できるでしょう。
+```
+＃＃ プラグインの存在検知 = ExistPluginMailBox
+＃＃ ExistPluginMailBox = 1 ： 有効
+＃＃ ExistPluginMailBox = 0 ： 無効
+
+＃終了時に乱数が同じだった場合、通知が止まっていると判断し無効化。
+＊OnSatoriClose
+（when,（OldCheckMailExists）!=（NewCheckMailExists）,（set,ExistPluginMailBox,1）,（set,ExistPluginMailBox,0））
+（set,OldCheckMailExists,（NewCheckMailExists））
+
+＃起動時にプラグインからの通知を受け取った場合、乱数を新しくする。
+＊OnExistPluginMailBox
+（set,NewCheckMailExists,（zen2han,（乱数０～９）（乱数０～９）（乱数０～９）（乱数０～９）（乱数０～９）（乱数０～９）（乱数０～９）（乱数０～９）（乱数０～９）（乱数０～９）（乱数０～９）（乱数０～９）））
 ```
 
 
