@@ -505,6 +505,11 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
                 }
             }
+
+
+
+
+
         /*}}}*/
         /*{{{*/
         ////Ghost作者が使用する機能
@@ -704,6 +709,15 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
             }
 
 
+
+
+
+
+
+
+
+
+
         /*}}}*/
         /*{{{*/
         ////Userが触る機能
@@ -857,6 +871,12 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 s.clear( stringstream::goodbit );
             }
 
+
+
+
+
+
+
         /*}}}*/
         /*{{{*/
         ////開発者向けメニューを作成する。
@@ -961,6 +981,12 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                 s.str("");
                 s.clear( stringstream::goodbit );
             }
+
+
+
+
+
+
         /*}}}*/
 
         //} else if ( strcmp( ID , "OnOtherGhostTalk" ) == 0 && NewMail != 0 ) {
