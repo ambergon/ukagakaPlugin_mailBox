@@ -247,14 +247,20 @@ OnBoot直後にゴーストにOnExistPluginMailBoxイベントを送ります。
 ＃＃ ExistPluginMailBox = 1 ： 有効
 ＃＃ ExistPluginMailBox = 0 ： 無効
 
-＃終了時に乱数が同じだった場合、通知が止まっていると判断し無効化。
-＊OnSatoriClose
-（when,（OldCheckMailExists）!=（NewCheckMailExists）,（set,ExistPluginMailBox,1）,（set,ExistPluginMailBox,0））
-（set,OldCheckMailExists,（NewCheckMailExists））
+＃初期化処理
+＊OnSatoriBoot
+＄ExistPluginMailBoxFlag=0
+＄ExistPluginMailBoxFlagOnce=0
 
-＃起動時にプラグインからの通知を受け取った場合、乱数を新しくする。
+＃ 現在バグで二回呼ばれることがある為このようになった。
+＊OnSatoriClose
+（when,（ExistPluginMailBoxFlagOnce）==0&&（ExistPluginMailBoxFlag）==1,（set,ExistPluginMailBox,1）,）
+（when,（ExistPluginMailBoxFlagOnce）==0&&（ExistPluginMailBoxFlag）==0,（set,ExistPluginMailBox,0）,）
+＄ExistPluginMailBoxFlagOnce=1
+
+＃実行タイミングはBoot後少し後。
 ＊OnExistPluginMailBox
-（set,NewCheckMailExists,（zen2han,（乱数０～９）（乱数０～９）（乱数０～９）（乱数０～９）（乱数０～９）（乱数０～９）（乱数０～９）（乱数０～９）（乱数０～９）（乱数０～９）（乱数０～９）（乱数０～９）））
+＄ExistPluginMailBoxFlag=1
 ```
 
 
