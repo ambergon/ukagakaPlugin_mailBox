@@ -260,6 +260,7 @@ OnBoot直後にゴーストにOnExistPluginMailBoxイベントを送ります。
 
 ＃実行タイミングはBoot後少し後。
 ＊OnExistPluginMailBox
+＄ExistPluginMailBox=1
 ＄ExistPluginMailBoxFlag=1
 ```
 
