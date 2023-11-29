@@ -108,8 +108,8 @@ extern "C" __declspec(dllexport) bool __cdecl unload(void){
 //}}}
 
 
-/*{{{*/
-// 共通関数
+//{{{
+// 共通関数---------------------------------------------------------
 string Sanitize( string sanitize ){
     sanitize = regex_replace( sanitize , regex( "'" ) ,"" );
     sanitize = regex_replace( sanitize , regex( "vanishbymyself" ) ,"危険な文字" );
@@ -132,9 +132,9 @@ string ZenToHan( string str ){
 }
 
 
-/*}}}*/
+//}}}
 // {{{
-// sql Call Back 関数
+// sql Call Back 関数-----------------------------------------------
 //| 旧mailBox     |        |          |        |       |          |         | 
 //| GhostMenuName | MailID | YYYYmmdd | Sender | Title | MailText | Checked |
 //
@@ -193,8 +193,10 @@ int callbackAllMailID(void *anything, int keyCount, char **value, char **key){
 
 
 /*}}}*/
-/*{{{*/
-// 基本関数
+//{{{
+// メール基本関数---------------------------------------------------------
+//{{{
+//メール送信機能----------------------------------------------------
 void SendMail( char* GhostMenuName , char* MailID , char* YYYY , char* MM , char* DD , char* Sender , char* Title , char* MailText ){
     //引数が正しくなくnullの可能性。足りない場合の処理
     char* err = NULL;
@@ -271,6 +273,11 @@ void SendMail( char* GhostMenuName , char* MailID , char* YYYY , char* MM , char
     streamDD.str("");
     streamDD.clear( stringstream::goodbit );
 }
+
+
+//}}}
+//{{{
+//メール削除機能----------------------------------------------------
 void DeleteMail( char* GhostMenuName , char* MailID ){
     char* err = NULL;
 
@@ -295,12 +302,16 @@ void DeleteMail( char* GhostMenuName , char* MailID ){
     sqlite3_close( db );
 }
 
-//err -1
-//0メールが存在しない
-//1まだ届いていない
-//2未読
-//3既読
-int StatusMail( char* GhostMenuName , char* MailID ){
+
+//}}}
+//{{{
+//メール状態確認機能------------------------------------------------
+int  StatusMail( char* GhostMenuName , char* MailID ){
+    //err -1
+    //0メールが存在しない
+    //1まだ届いていない
+    //2未読
+    //3既読
     char* err = NULL;
 
     string strGhostMenuName  = GhostMenuName;
@@ -338,7 +349,84 @@ int StatusMail( char* GhostMenuName , char* MailID ){
 
     return mailStatus;
 }
-/*}}}*/
+
+
+//}}}
+//{{{
+//メールリスト機能--------------------------------------------------
+string ListMail( string GhostMenuName , string strChecked , string strOffset ){
+
+    int offset          = atoi( strOffset.c_str() );
+    string strYMD;
+    stringstream streamYMD;
+    time_t t = time(nullptr);
+    const tm* localTime = localtime(&t);
+    streamYMD << localTime->tm_year + 1900;
+    streamYMD << setw(2) << setfill('0') << localTime->tm_mon + 1;
+    streamYMD << setw(2) << setfill('0') << localTime->tm_mday;
+    streamYMD >> strYMD;
+
+    char* err = NULL;
+    sqlite3_open16( dbPATH , &db );
+
+    //ghost個別確認
+    string mailList ;
+    if ( strChecked == "2" ){
+        mailList = "select * from mailBox2 where GhostMenuName =='" + GhostMenuName + "' and YYYYmmdd <= " + strYMD + " order by YYYYmmdd desc,MailID desc limit 20 offset " + strOffset ;
+
+        //未読 or 既読
+    } else {
+        mailList = "select * from mailBox2 where YYYYmmdd <= " + strYMD + " and Checked = " + strChecked + " order by YYYYmmdd desc,MailID desc limit 20 offset " + strOffset ;
+    }
+    //string mailList = "select * from mailBox2 where YYYYmmdd <= " + strYMD + " and Checked = " + strChecked + " order by YYYYmmdd desc,MailID desc limit 20 offset " + strOffset ;
+    int sqliteRes = sqlite3_exec( db , mailList.c_str() , callbackMailList , (void*)&offset , &err );
+#ifdef Debug
+    if ( sqliteRes != 0 ){
+        printf( "Select%s\n" , err );
+    }
+#endif
+    //未読ディレクトリなら通知済みに変更
+    if ( strChecked == "0" ){
+        string moveMail = "update mailBox2 set Notified = 1 where YYYYmmdd <= " + strYMD + " and Notified = 0" ;
+        sqliteRes = sqlite3_exec( db , moveMail.c_str() , NULL , NULL , &err );
+
+        //個別ディレクトリならそのゴーストの未通知を通知に。
+    } else if ( strChecked == "2" ){
+        string moveMail = "update mailBox2 set Notified = 1 where GhostMenuName =='" + GhostMenuName + "' and YYYYmmdd <= " + strYMD + " and Notified = 0" ;
+        sqliteRes = sqlite3_exec( db , moveMail.c_str() , NULL , NULL , &err );
+    }
+
+    sqlite3_close( db );
+
+    string start        = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\0\\b[2]\\_q";
+    string backSelect;
+    if( offset < 20 ){
+        backSelect   = "┌┬──────最新──────┬┐\\n";
+    } else {
+        backSelect   = "┌┬\\_a[OnCheckMail," + strChecked + "," + to_string( offset - 20 ) + "]─────前の20件─────\\_a┬┐\\n";
+    }
+    string exitSelect;
+    if( strChecked == "0" ){
+        exitSelect = "┌┬\\q[─────閉じる──────,]┬┐\\n├┼\\q[────既読メール─────,OnCheckMail,1,0]┼┤\\n└┴\\q[────個別メール─────,OnCheckMail,2,0]┴┘\\n\\n";
+    } else {
+        exitSelect = "┌┬\\q[─────閉じる──────,]┬┐\\n├┼\\q[────未読メール─────,OnCheckMail,0,0]┼┤\\n└┴\\q[────個別メール─────,OnCheckMail,2,0]┴┘\\n\\n";
+    }
+    string nextSelect;
+    nextSelect   = "└┴\\_a[OnCheckMail," + strChecked + "," + to_string( offset + 20 ) + "]─────次の20件─────\\_a┴┘\\n";
+
+    string end          = "\\_q\r\nScriptOption: nobreak,notranslate\r\n\r\n";
+    string selectRes    = s.str();
+    string total        = start + exitSelect + backSelect + selectRes + nextSelect + end;
+    streamYMD.str("");
+    streamYMD.clear( stringstream::goodbit );
+    s.str("");
+    s.clear( stringstream::goodbit );
+    return total;
+}
+//}}}
+
+
+//}}}
 
 
 extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
@@ -510,12 +598,24 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
                     resBuf = res_buf;
 
 
-
                 }
             }
 
 
+        //トレイバルーンをクリックしたときに未読メールが開かれるように。
+        } else if ( strcmp( ID , "OnTrayBalloonClick" ) == 0 ) {
 
+            string strChecked   = "0";
+            string strOffset    = "0";
+            string GhostMenuName = Sender;
+            GhostMenuName = Sanitize( GhostMenuName );
+
+            string total = ListMail( GhostMenuName , strChecked , strOffset );
+            int i               = strlen( total.c_str() );
+            char* res_buf;
+            res_buf = (char*)calloc( i + 1 , sizeof(char) );
+            memcpy( res_buf , total.c_str() , i );
+            resBuf = res_buf;
 
 
         //}}}
@@ -528,6 +628,99 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
             res_buf = (char*)calloc( i + 1 , sizeof(char) );
             memcpy( res_buf , OnExistPluginMailBox.c_str() , i );
             resBuf = res_buf;
+
+
+
+
+        //}}}
+        //{{{
+        ////Userが触る機能
+        //メールボックス
+        //┌ └ ┐ ┘ ├ ┤ ─ ┬ ┼ ┴
+        //\\_a[OnCheckMail,0,0] ───未読メール─── \\_a
+        //\\_a[OnCheckMail,1,0] ───既読メール─── \\_a┼
+        //\\_a[OnCheckMail,2,0] ───選択メール─── \\_a┼
+        } else if ( strcmp( ID , "OnMenuExec" ) == 0 ) {
+            char res_buf[] = 
+                "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\_q┌┬────────────┬┐ \\n├┼────────────┼┤ \\n├┼ \\q[───未読メール───,OnCheckMail,0,0] ┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[───既読メール───,OnCheckMail,1,0] ┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[───個別メール───,OnCheckMail,2,0] ┼┤ \\n├┼────────────┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[────閉じる────,] ┼┤ \\n└┴────────────┴┘ \\_q \r\nScriptOption: nobreak,notranslate\r\n\r\n";
+            //char res_buf[] = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\_q\\_a[OnCheckMail,0,0]未読メール\\_a\\n\\_a[OnCheckMail,1,0]既読メール\\_a\\_q\r\nScriptOption: nobreak,notranslate\r\n\r\n";
+            resBuf = res_buf;
+
+
+
+        //第0引数 未読 = 0 , 既読 = 1 , そのゴーストのメール = 2
+        //第1引数 offset
+        } else if ( strcmp( ID , "OnCheckMail" ) == 0 ) {
+            if ( Reference0 != NULL && Reference1 != NULL ) {
+
+                string strChecked   = Reference0 ;
+                string strOffset    = Reference1 ;
+                string GhostMenuName = Sender;
+                GhostMenuName = Sanitize( GhostMenuName );
+                
+                string total = ListMail( GhostMenuName , strChecked , strOffset );
+                int i               = strlen( total.c_str() );
+                char* res_buf;
+                res_buf = (char*)calloc( i + 1 , sizeof(char) );
+                memcpy( res_buf , total.c_str() , i );
+                resBuf = res_buf;
+
+
+            }
+        
+
+        //|               |        |          |        |       |          |         |
+        //| GhostMenuName | MailID | YYYYmmdd | Sender | Title | MailText | Checked |
+        //|               |        |          |        |       |          |         |
+        //第0引数 : ゴースト名
+        //第1引数 : メールID
+        //第2引数 : それらのオフセット
+        //既読リストに限りオフセットが欲しい。
+        } else if ( strcmp( ID , "OnOpenMail" ) == 0 ) {
+            if ( Reference0 != NULL && Reference1 != NULL && Reference2 != NULL ){
+                string strGhostMenuName = Reference0;
+                string strMailID        = Reference1;
+                string strOffSet        = Reference2;
+
+
+                char* err = NULL;
+                sqlite3_open16( dbPATH , &db );
+                string moveMail = "update mailBox2 set Checked = 1 where GhostMenuName = '" + strGhostMenuName + "' and MailID = " + strMailID  ;
+                int sqliteRes = sqlite3_exec( db , moveMail.c_str() , NULL , NULL , &err );
+#ifdef Debug
+                if ( sqliteRes != 0 ) {
+                    printf( "%s\n" , err );
+                }
+#endif
+
+                //printf( "Update%s\n" , err );
+                string openMail = "select * from mailBox2 where GhostMenuName = '" + strGhostMenuName + "' and MailID = " + strMailID  ;
+                sqliteRes = sqlite3_exec( db , openMail.c_str() , callbackOpenMail , NULL , &err );
+#ifdef Debug
+                if ( sqliteRes != 0 ) {
+                    printf( "%s\n" , err );
+                }
+#endif
+                //printf( "Select%s\n" , err );
+                sqlite3_close( db );
+
+                string start        = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\0\\b[2]\\_q";
+                string end          = "\\n\\_a[OnCheckMail,0,0]未読メール\\_a - \\_a[OnCheckMail,1," + strOffSet + "]既読メール\\_a - \\_a[OnCheckMail,2," + strOffSet + "]個別メール\\_a \r\nScriptOption: nobreak,notranslate\r\n\r\n";
+                string selectRes    = s.str();
+                string total        = start + selectRes + end;
+                int i               = strlen( total.c_str() );
+
+                char* res_buf;
+                res_buf = (char*)calloc( i + 1 , sizeof(char) );
+                memcpy( res_buf , total.c_str() , i );
+                resBuf = res_buf;
+
+                s.str("");
+                s.clear( stringstream::goodbit );
+            }
+
+
+
 
 
 
@@ -729,165 +922,6 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
                 resBuf = res_buf;
             }
-
-
-
-
-
-        //}}}
-        //{{{
-        ////Userが触る機能
-        //メールボックス
-        //┌ └ ┐ ┘ ├ ┤ ─ ┬ ┼ ┴
-        //\\_a[OnCheckMail,0,0] ───未読メール─── \\_a
-        //\\_a[OnCheckMail,1,0] ───既読メール─── \\_a┼
-        //\\_a[OnCheckMail,2,0] ───選択メール─── \\_a┼
-        } else if ( strcmp( ID , "OnMenuExec" ) == 0 ) {
-            char res_buf[] = 
-                "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\_q┌┬────────────┬┐ \\n├┼────────────┼┤ \\n├┼ \\q[───未読メール───,OnCheckMail,0,0] ┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[───既読メール───,OnCheckMail,1,0] ┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[───個別メール───,OnCheckMail,2,0] ┼┤ \\n├┼────────────┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[────閉じる────,] ┼┤ \\n└┴────────────┴┘ \\_q \r\nScriptOption: nobreak,notranslate\r\n\r\n";
-            //char res_buf[] = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\_q\\_a[OnCheckMail,0,0]未読メール\\_a\\n\\_a[OnCheckMail,1,0]既読メール\\_a\\_q\r\nScriptOption: nobreak,notranslate\r\n\r\n";
-            resBuf = res_buf;
-
-
-
-        //第0引数 未読 = 0 , 既読 = 1 , そのゴーストのメール = 2
-        //第1引数 offset
-        } else if ( strcmp( ID , "OnCheckMail" ) == 0 ) {
-            if ( Reference0 != NULL && Reference1 != NULL ) {
-
-                string GhostMenuName = Sender;
-                GhostMenuName = Sanitize( GhostMenuName );
-
-                string strChecked   = Reference0 ;
-                string strOffset    = Reference1 ;
-                int offset          = atoi( Reference1 );
-
-                string strYMD;
-                stringstream streamYMD;
-                time_t t = time(nullptr);
-                const tm* localTime = localtime(&t);
-                streamYMD << localTime->tm_year + 1900;
-                streamYMD << setw(2) << setfill('0') << localTime->tm_mon + 1;
-                streamYMD << setw(2) << setfill('0') << localTime->tm_mday;
-                streamYMD >> strYMD;
-
-                char* err = NULL;
-                sqlite3_open16( dbPATH , &db );
-
-                //ghost個別確認
-                string mailList ;
-                if ( strChecked == "2" ){
-                    mailList = "select * from mailBox2 where GhostMenuName =='" + GhostMenuName + "' and YYYYmmdd <= " + strYMD + " order by YYYYmmdd desc,MailID desc limit 20 offset " + strOffset ;
-
-                //未読 or 既読
-                } else {
-                    mailList = "select * from mailBox2 where YYYYmmdd <= " + strYMD + " and Checked = " + strChecked + " order by YYYYmmdd desc,MailID desc limit 20 offset " + strOffset ;
-                }
-                //string mailList = "select * from mailBox2 where YYYYmmdd <= " + strYMD + " and Checked = " + strChecked + " order by YYYYmmdd desc,MailID desc limit 20 offset " + strOffset ;
-                int sqliteRes = sqlite3_exec( db , mailList.c_str() , callbackMailList , (void*)&offset , &err );
-#ifdef Debug
-                if ( sqliteRes != 0 ){
-                    printf( "Select%s\n" , err );
-                }
-#endif
-                //未読ディレクトリなら通知済みに変更
-                if ( strChecked == "0" ){
-                    string moveMail = "update mailBox2 set Notified = 1 where YYYYmmdd <= " + strYMD + " and Notified = 0" ;
-                    sqliteRes = sqlite3_exec( db , moveMail.c_str() , NULL , NULL , &err );
-
-                //個別ディレクトリならそのゴーストの未通知を通知に。
-                } else if ( strChecked == "2" ){
-                    string moveMail = "update mailBox2 set Notified = 1 where GhostMenuName =='" + GhostMenuName + "' and YYYYmmdd <= " + strYMD + " and Notified = 0" ;
-                    sqliteRes = sqlite3_exec( db , moveMail.c_str() , NULL , NULL , &err );
-                }
-
-                sqlite3_close( db );
-
-                string start        = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\0\\b[2]\\_q";
-                string backSelect;
-                if( offset < 20 ){
-                    backSelect   = "┌┬──────最新──────┬┐\\n";
-                } else {
-                    backSelect   = "┌┬\\_a[OnCheckMail," + strChecked + "," + to_string( offset - 20 ) + "]─────前の20件─────\\_a┬┐\\n";
-                }
-                string exitSelect;
-                if( strChecked == "0" ){
-                    exitSelect = "┌┬\\q[─────閉じる──────,]┬┐\\n├┼\\q[────既読メール─────,OnCheckMail,1,0]┼┤\\n└┴\\q[────個別メール─────,OnCheckMail,2,0]┴┘\\n\\n";
-                } else {
-                    exitSelect = "┌┬\\q[─────閉じる──────,]┬┐\\n├┼\\q[────未読メール─────,OnCheckMail,0,0]┼┤\\n└┴\\q[────個別メール─────,OnCheckMail,2,0]┴┘\\n\\n";
-                }
-                string nextSelect;
-                nextSelect   = "└┴\\_a[OnCheckMail," + strChecked + "," + to_string( offset + 20 ) + "]─────次の20件─────\\_a┴┘\\n";
-
-                string end          = "\\_q\r\nScriptOption: nobreak,notranslate\r\n\r\n";
-                string selectRes    = s.str();
-                string total        = start + exitSelect + backSelect + selectRes + nextSelect + end;
-                int i               = strlen( total.c_str() );
-
-                char* res_buf;
-                res_buf = (char*)calloc( i + 1 , sizeof(char) );
-                memcpy( res_buf , total.c_str() , i );
-                resBuf = res_buf;
-
-
-                streamYMD.str("");
-                streamYMD.clear( stringstream::goodbit );
-                s.str("");
-                s.clear( stringstream::goodbit );
-            }
-        
-
-        //|               |        |          |        |       |          |         |
-        //| GhostMenuName | MailID | YYYYmmdd | Sender | Title | MailText | Checked |
-        //|               |        |          |        |       |          |         |
-        //第0引数 : ゴースト名
-        //第1引数 : メールID
-        //第2引数 : それらのオフセット
-        //既読リストに限りオフセットが欲しい。
-        } else if ( strcmp( ID , "OnOpenMail" ) == 0 ) {
-            if ( Reference0 != NULL && Reference1 != NULL && Reference2 != NULL ){
-                string strGhostMenuName = Reference0;
-                string strMailID        = Reference1;
-                string strOffSet        = Reference2;
-
-
-                char* err = NULL;
-                sqlite3_open16( dbPATH , &db );
-                string moveMail = "update mailBox2 set Checked = 1 where GhostMenuName = '" + strGhostMenuName + "' and MailID = " + strMailID  ;
-                int sqliteRes = sqlite3_exec( db , moveMail.c_str() , NULL , NULL , &err );
-#ifdef Debug
-                if ( sqliteRes != 0 ) {
-                    printf( "%s\n" , err );
-                }
-#endif
-
-                //printf( "Update%s\n" , err );
-                string openMail = "select * from mailBox2 where GhostMenuName = '" + strGhostMenuName + "' and MailID = " + strMailID  ;
-                sqliteRes = sqlite3_exec( db , openMail.c_str() , callbackOpenMail , NULL , &err );
-#ifdef Debug
-                if ( sqliteRes != 0 ) {
-                    printf( "%s\n" , err );
-                }
-#endif
-                //printf( "Select%s\n" , err );
-                sqlite3_close( db );
-
-                string start        = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\0\\b[2]\\_q";
-                string end          = "\\n\\_a[OnCheckMail,0,0]未読メール\\_a - \\_a[OnCheckMail,1," + strOffSet + "]既読メール\\_a - \\_a[OnCheckMail,2," + strOffSet + "]個別メール\\_a \r\nScriptOption: nobreak,notranslate\r\n\r\n";
-                string selectRes    = s.str();
-                string total        = start + selectRes + end;
-                int i               = strlen( total.c_str() );
-
-                char* res_buf;
-                res_buf = (char*)calloc( i + 1 , sizeof(char) );
-                memcpy( res_buf , total.c_str() , i );
-                resBuf = res_buf;
-
-                s.str("");
-                s.clear( stringstream::goodbit );
-            }
-
-
 
 
 
