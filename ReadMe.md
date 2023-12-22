@@ -254,10 +254,12 @@ OnBoot直後にゴーストにOnExistPluginMailBoxイベントを送ります。
 ＃ 起動後にチェック関数が飛ぶ。
 ＊OnExistPluginMailBox
 ＄ExistPluginMailBox=1
-
---------------------------------------------------------------------
-＃もしくは 下記
-
+```
+もしくはこのようにする。<br>
+起動時にOnStatusMailEX関数をプラグインの有無を確認しつつ使用する場合、<br>
+OnExistPluginMailBox関数が間に合わないためこのように実装するなどした。<br>
+(そもそもその場合はプラグイン必須になってしまうだろうから有無の確認はいらないかもしれない。)<br>
+```
 ＃初期化処理
 ＊OnSatoriBoot
 ＄ExistPluginMailBoxFlag=0
