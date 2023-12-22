@@ -247,6 +247,17 @@ OnBoot直後にゴーストにOnExistPluginMailBoxイベントを送ります。
 ＃＃ ExistPluginMailBox = 1 ： 有効
 ＃＃ ExistPluginMailBox = 0 ： 無効
 
+＃ 各起動関数に追記
+＊OnBoot
+＄ExistPluginMailBox=0
+
+＃ 起動後にチェック関数が飛ぶ。
+＊OnExistPluginMailBox
+＄ExistPluginMailBox=1
+
+--------------------------------------------------------------------
+＃もしくは 下記
+
 ＃初期化処理
 ＊OnSatoriBoot
 ＄ExistPluginMailBoxFlag=0
