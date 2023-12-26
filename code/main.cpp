@@ -190,11 +190,45 @@ int callbackAllMailID(void *anything, int keyCount, char **value, char **key){
     s << value[1] << ":";
     return 0;
 }
+// 呼ばれた時は0以外。
+int callbackNextMailID(void *anything, int keyCount, char **value, char **key){
+    *(int*)anything = 1;
+    return 0;
+}
 
 
 /*}}}*/
 //{{{
-// メール基本関数---------------------------------------------------------
+// メール基本関数---------------------------------------------------
+//{{{
+//メール自動ID管理機能----------------------------------------------
+// スコープの関係でsendより先。
+// これはサニタイズ済みのゴースト名である。
+// 呼ばれるのはauto / Auto / AUTO のいずれかである。
+int NextMailID( string GhostMenuName ){
+    char* err = NULL;
+
+    // do-while用
+    int mailCount  = -1;
+    int mailStatus ;
+    sqlite3_open16( dbPATH , &db );
+    // while
+    do {
+        mailCount++;
+        mailStatus = 0;
+        string sqlSelect = "select * from mailBox2 where GhostMenuName ='" + GhostMenuName + "' and MailID = '" + to_string( mailCount ) + "'";
+        int sqliteRes = sqlite3_exec( db , sqlSelect.c_str() , callbackNextMailID , (void*)&mailStatus , &err );
+#ifdef Debug
+        if ( sqliteRes != 0 ) {
+            printf( "%s\n" , err );
+        }
+#endif
+    } while ( mailStatus != 0 );
+    sqlite3_close( db );
+
+    return mailCount ;
+}
+//}}}
 //{{{
 //メール送信機能----------------------------------------------------
 void SendMail( char* GhostMenuName , char* MailID , char* YYYY , char* MM , char* DD , char* Sender , char* Title , char* MailText ){
@@ -205,6 +239,13 @@ void SendMail( char* GhostMenuName , char* MailID , char* YYYY , char* MM , char
     strGhostMenuName  = Sanitize( strGhostMenuName );
 
     string strMailID         = MailID       ;
+    // 自動で次のメールを送信する機能を呼び出す。
+    if ( strMailID == "auto" ||   strMailID == "Auto" || strMailID == "AUTO"  ) {
+        int NextID = NextMailID( strGhostMenuName );
+        strMailID = to_string( NextID );
+        printf( "nextMailID : %s\n" , strMailID.c_str() );
+    }
+
     strMailID                = ZenToHan( strMailID );
 
     //二桁にすること。結合すること。
