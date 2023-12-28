@@ -8,6 +8,18 @@
 [【伺か】ゴーストがユーザにメールを送れるようになるプラグインを書いた。【SSP】](https://ambergonslibrary.com/?p=9188)<br>
 
 
+## 更新履歴
+- v1.0.1
+    OnSendMailでメールIDをautoで指定出来るようになった。
+- v1.0.2
+    OnExistPluginMailBox関数が呼ばれた時に、プラグインのバージョンを取得できるようになった。
+    OnVersion関数を呼び出したときに、能動的にOnExistPluginMailBox関数を呼べるようになった。
+
+
+
+
+
+
 ## 一般ユーザ向け
 プラグイン導入後、ゴーストの右クリック -> プラグイン -> MailBox を開くことによってメニューを開くことができます。<br>
 以下項目<br>
@@ -252,6 +264,7 @@ OnBoot直後にゴーストにOnExistPluginMailBoxイベントを送ります。
 (OnBootには間に合わない)<br>
 <br>
 里々だとこのようにすれば、検知できるでしょう。<br>
+また、この関数のReference0にプラグインのバージョンが入ります。(1.0.2で追加)<br>
 ```
 ＃＃ プラグインの存在検知 = ExistPluginMailBox
 ＃＃ ExistPluginMailBox = 1 ： 有効
@@ -262,8 +275,11 @@ OnBoot直後にゴーストにOnExistPluginMailBoxイベントを送ります。
 ＄ExistPluginMailBox=0
 
 ＃ 起動後にチェック関数が飛ぶ。
-＊OnExistPluginMailBox
 ＄ExistPluginMailBox=1
+＃MailBoxVersion変数にプラグインのバージョンを格納する。
+（when,（変数「R0」の存在）==0,（set,MailBoxVersion,"v1.0.1以下"）,（set,MailBoxVersion,（R0）））
+＃MailBoxが最初から対応していたなら、下記だけで済んだ。
+＃（set,MailBoxVersion,（R0））
 ```
 もしくはこのようにする。<br>
 起動時にOnStatusMailEX関数をプラグインの有無を確認しつつ使用する場合、<br>

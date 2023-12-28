@@ -16,8 +16,8 @@ using namespace std;
 
 
 
-#define Debug
-const string pluginVersion = " v1.0.2";
+//#define Debug
+const string pluginVersion = "1.0.2";
 
 
 FILE* ConsoleWindow;
@@ -582,7 +582,12 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
     if ( ID != NULL ) {
 
         if ( strcmp( ID , "version" ) == 0 ) {
-            char res_buf[] = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nValue: 1.0.0\r\n\r\n";
+            //char res_buf[] = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nValue: 1.0.0\r\n\r\n";
+            string resStr = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nValue: " + pluginVersion + "\r\n\r\n";
+            int i = strlen( resStr.c_str() );
+            char* res_buf;
+            res_buf = (char*)calloc( i + 1 , sizeof(char) );
+            memcpy( res_buf , resStr.c_str() , i );
             resBuf = res_buf;
 
         //{{{
@@ -679,7 +684,7 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
         //\\_a[OnCheckMail,2,0] ───選択メール─── \\_a┼
         } else if ( strcmp( ID , "OnMenuExec" ) == 0 ) {
 
-            string resStr = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\_q┌┬─MailBoxSYSTEM" + pluginVersion + "─┬┐ \\n├┼────────────┼┤ \\n├┼ \\q[───未読メール───,OnCheckMail,0,0] ┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[───既読メール───,OnCheckMail,1,0] ┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[───個別メール───,OnCheckMail,2,0] ┼┤ \\n├┼────────────┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[────閉じる────,] ┼┤ \\n└┴────────────┴┘ \\_q \r\nScriptOption: nobreak,notranslate\r\n\r\n";
+            string resStr = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\_q┌┬─MailBoxSYSTEM v" + pluginVersion + "─┬┐ \\n├┼────────────┼┤ \\n├┼ \\q[───未読メール───,OnCheckMail,0,0] ┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[───既読メール───,OnCheckMail,1,0] ┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[───個別メール───,OnCheckMail,2,0] ┼┤ \\n├┼────────────┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[────閉じる────,] ┼┤ \\n└┴────────────┴┘ \\_q \r\nScriptOption: nobreak,notranslate\r\n\r\n";
             int i = strlen( resStr.c_str() );
             char* res_buf;
             res_buf = (char*)calloc( i + 1 , sizeof(char) );
