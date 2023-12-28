@@ -12,15 +12,13 @@
 
 //stringstream
 #include <iomanip>
-
-
-//#define Debug
-
-
-
-
-
 using namespace std;
+
+
+
+#define Debug
+const string pluginVersion = " v1.0.2";
+
 
 FILE* ConsoleWindow;
 
@@ -34,6 +32,7 @@ sqlite3 *db = NULL;
 static string strYMD;
 static stringstream s;
 static int SecChange = 60;
+
 
 
 //{{{
@@ -662,16 +661,13 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
         //}}}
         //{{{
         ////プラグインの存在を通知する機能
-        } else if ( strcmp( ID , "OnGhostBoot" ) == 0 ) {
-            string OnExistPluginMailBox = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nEvent: OnExistPluginMailBox\r\n\r\n";
+        } else if ( strcmp( ID , "OnGhostBoot" ) == 0 || strcmp( ID , "OnVersion" ) == 0 ) {
+            string OnExistPluginMailBox = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nEvent: OnExistPluginMailBox\r\nReference0: " + pluginVersion + "\r\n\r\n";
             int i = strlen( OnExistPluginMailBox.c_str() );
             char* res_buf;
             res_buf = (char*)calloc( i + 1 , sizeof(char) );
             memcpy( res_buf , OnExistPluginMailBox.c_str() , i );
             resBuf = res_buf;
-
-
-
 
         //}}}
         //{{{
@@ -682,11 +678,13 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
         //\\_a[OnCheckMail,1,0] ───既読メール─── \\_a┼
         //\\_a[OnCheckMail,2,0] ───選択メール─── \\_a┼
         } else if ( strcmp( ID , "OnMenuExec" ) == 0 ) {
-            char res_buf[] = 
-                "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\_q┌┬────────────┬┐ \\n├┼────────────┼┤ \\n├┼ \\q[───未読メール───,OnCheckMail,0,0] ┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[───既読メール───,OnCheckMail,1,0] ┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[───個別メール───,OnCheckMail,2,0] ┼┤ \\n├┼────────────┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[────閉じる────,] ┼┤ \\n└┴────────────┴┘ \\_q \r\nScriptOption: nobreak,notranslate\r\n\r\n";
-            //char res_buf[] = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\_q\\_a[OnCheckMail,0,0]未読メール\\_a\\n\\_a[OnCheckMail,1,0]既読メール\\_a\\_q\r\nScriptOption: nobreak,notranslate\r\n\r\n";
-            resBuf = res_buf;
 
+            string resStr = "PLUGIN/2.0 200 OK\r\nCharset: UTF-8\r\nScript: \\_q┌┬─MailBoxSYSTEM" + pluginVersion + "─┬┐ \\n├┼────────────┼┤ \\n├┼ \\q[───未読メール───,OnCheckMail,0,0] ┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[───既読メール───,OnCheckMail,1,0] ┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[───個別メール───,OnCheckMail,2,0] ┼┤ \\n├┼────────────┼┤ \\n├┼────────────┼┤ \\n├┼ \\q[────閉じる────,] ┼┤ \\n└┴────────────┴┘ \\_q \r\nScriptOption: nobreak,notranslate\r\n\r\n";
+            int i = strlen( resStr.c_str() );
+            char* res_buf;
+            res_buf = (char*)calloc( i + 1 , sizeof(char) );
+            memcpy( res_buf , resStr.c_str() , i );
+            resBuf = res_buf;
 
 
         //第0引数 未読 = 0 , 既読 = 1 , そのゴーストのメール = 2
@@ -1079,7 +1077,6 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
         //}}}
 
         //} else if ( strcmp( ID , "OnOtherGhostTalk" ) == 0 && NewMail != 0 ) {
-
 
 
         } else if ( strcmp( ID , "OnGhostExit" ) == 0 ) {

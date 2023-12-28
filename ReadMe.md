@@ -44,7 +44,7 @@ SSP起動後と約一時間おきに未通知メールの通知が入ります�
 - メールIDは数字で管理します。<br>
     負数は使えません。<br>
 - メールIDの自動管理機能が1.0.1で追加されました。<br>
-    メール送信時、メールIDにautoもしくはAuto、AUTOのいずれかを指定することで、0から空いている数字を探して自動で割り当てます。<br>
+    OnSendMail使用時、メールIDにautoもしくはAuto、AUTOのいずれかを指定することで、0から空いている数字を探して自動で割り当てます。<br>
 - 同じメールIDでメールを送信すると既存のメールが上書きされます。<br>
 - この際、上書きされたメールは未通知・未読状態になります。<br>
 - 送信日が明日以降の場合は問題なく指定した日にユーザに届きます。<br>
@@ -54,6 +54,8 @@ SSP起動後と約一時間おきに未通知メールの通知が入ります�
 #### メールの送信:OnSendMail
 ```
 \![notifyplugin,MailBox,OnSendMail,メールのID,送信年,送信月,送信日,送信者名,メールタイトル,メール本文]
+# v1.0.1 で追加 / Auto
+\![notifyplugin,MailBox,OnSendMail,Auto,送信年,送信月,送信日,送信者名,メールタイトル,メール本文]
 ```
 
 - notifypluginを使用して送信します。
@@ -78,6 +80,12 @@ SSP起動後と約一時間おきに未通知メールの通知が入ります�
 ```
 //yaya
 "\![raiseplugin,MailBox,OnSendMail,0,%(year),%(month),%(day),送信者,タイトル,無事に届いていますか?\n\_a[OnXX\]LINK\_a]"
+```
+写真付きのメールを送る。<br>
+ghost/masterフォルダにred.pngをおいている場合、下記のようにすると`\_b`を活用して送信できます。<br>
+```
+＄PATH	（replace,（pwd）,\,/）
+：画像送信\![notifyplugin,MailBox,OnSendMail,0,（現在年）,（現在月）,（現在日）,送信者,画像送信テスト,\_b[（PATH）red.png\,inline\,opaque\]]
 ```
 
 
