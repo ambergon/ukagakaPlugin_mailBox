@@ -275,6 +275,7 @@ OnBoot直後にゴーストにOnExistPluginMailBoxイベントを送ります。
 ＄ExistPluginMailBox=0
 
 ＃ 起動後にチェック関数が飛ぶ。
+＊OnExistPluginMailBox
 ＄ExistPluginMailBox=1
 ＃MailBoxVersion変数にプラグインのバージョンを格納する。
 （when,（変数「R0」の存在）==0,（set,MailBoxVersion,"v1.0.1以下"）,（set,MailBoxVersion,（R0）））
